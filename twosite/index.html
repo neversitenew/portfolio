@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lumera Dental</title>
+<meta name="description" content="Lumera — вымышленная стоматология, открытая в 2026 году. Концепт-лендинг для портфолио: услуги с ценами и 3D-зубом, о клинике, вопросы. RU / EN.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@0,400;1,400&display=swap">
+
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ["var(--font-display)"],
+          body: ["Inter", "system-ui", "sans-serif"]
+        },
+        colors: { background: "#FFFFFF", ink: "#000000", mute: "#6F6F6F" }
+      }
+    }
+  };
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+  /* Layout: one white page for a calm dental clinic. Hero with a painted plain (and the looping video when it loads), then Services with prices, Clinic, FAQ and a booking footer.
+     Palette is fixed by the brief: white, black, one grey. This design is a single light look by choice. */
+  :root { --background: #ffffff; --ink: #000000; --mute: #6F6F6F; --line: rgba(0,0,0,0.12); --haze: #d9dde3; --font-display: 'Instrument Serif', Georgia, serif; color-scheme: light; }
+  /* Instrument Serif has no Cyrillic, so Russian uses Playfair Display for headings */
+  html[lang="ru"] { --font-display: 'Playfair Display', Georgia, serif; }
+  html[lang="ru"] .font-display { font-feature-settings: "lnum"; }
+  html[lang="ru"] h1.font-display, html[lang="ru"] h2.font-display { line-height: 1.04 !important; letter-spacing: -0.018em !important; }
+  html { scroll-behavior: smooth; background: var(--background); }
+  body { margin: 0; background: var(--background); color: var(--ink); font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  section[id], footer[id] { scroll-margin-top: 72px; }
+  .gutter { padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+
+  /* theme.css: rise-in animations */
+  @keyframes fade-rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-fade-rise { animation: fade-rise 0.8s ease-out both; }
+  .animate-fade-rise-delay { animation: fade-rise 0.8s ease-out 0.2s both; }
+  .animate-fade-rise-delay-2 { animation: fade-rise 0.8s ease-out 0.4s both; }
+
+  /* Hero scene: painted plain under the video, fallback gradient if WebGL is off */
+  .meadow-bg { background: linear-gradient(180deg, #dfe4ea 0%, #eef0ef 46%, #9aa38a 54%, #5f6b4f 100%); }
+  .meadow-canvas { opacity: 0; transition: opacity 1.4s ease; }
+  .meadow-canvas.is-on { opacity: 1; }
+  .word { display: inline-block; animation: fade-rise 0.9s cubic-bezier(.2,.7,.2,1) both; }
+
+  /* Scroll reveal */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(.2,.7,.2,1), transform 0.9s cubic-bezier(.2,.7,.2,1); }
+  .reveal.is-in { opacity: 1; transform: none; }
+
+  @keyframes scroll-dot { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(14px); opacity: 0; } 100% { transform: translateY(0); opacity: 0; } }
+  .scroll-dot { animation: scroll-dot 1.8s ease-in-out infinite; }
+  .tilt { position: relative; transition: transform 0.35s cubic-bezier(.2,.7,.2,1), box-shadow 0.35s ease, border-color 0.3s ease, background-color 0.3s ease; will-change: transform; }
+  .tilt::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 0.35s ease;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.7), rgba(255,255,255,0) 45%); }
+  .tilt:hover { box-shadow: 0 30px 60px -30px rgba(0,0,0,0.28); }
+  .tilt:hover::after { opacity: 1; }
+  .tooth-card { background: radial-gradient(120% 90% at 50% 20%, #ffffff 0%, #eef0f2 55%, #e2e5e8 100%); }
+  .fact-circle { transition: background-color 0.5s ease, color 0.5s ease, transform 0.5s cubic-bezier(.2,.7,.2,1), border-color 0.5s ease; }
+  .fact-circle:hover { background: #000; color: #fff; border-color: #000; transform: scale(1.04); }
+  .fact-circle:hover .fact-label { color: rgba(255,255,255,0.7); }
+  .foot-link .arrow { transition: transform 0.3s ease; }
+  .foot-link:hover .arrow { transform: translate(6px, -6px); }
+
+  .acc { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.35s ease; }
+  .acc[data-open="true"] { grid-template-rows: 1fr; }
+  .acc > div { overflow: hidden; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .animate-fade-rise, .animate-fade-rise-delay, .animate-fade-rise-delay-2 { animation: none; }
+    .word, .scroll-dot { animation: none; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .meadow-canvas { transition: none; }
+    .tilt, .fact-circle { transition: none; }
+    .fact-circle:hover { transform: none; }
+    .acc { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+  const NAV_IDS = ["home", "services", "clinic", "faq"];
+
+  const T = {
+    en: {
+      nav: ["Home", "Services", "Clinic", "FAQ"], navLabel: "Main", menu: "Menu", close: "Close", cta: "Services & prices", drag: "Drag to rotate", toothAria: "3D tooth model. Drag to rotate.",
+      hero: ["Without fear ", "or pain,", " a smile ", "for years."],
+      heroText: "A dental clinic that feels calm. We treat under a microscope, plan with 3D scans and explain every step before we begin.",
+      studio: { eyebrow: "Services", h: ["Care without fear, ", "results that last."], p: "Every price is fixed before treatment and never changes in the chair. You leave the first visit with a written treatment plan.", aria: "Details" },
+      services: [
+        { name: "Fillings", metric: "from 18 000 ₸", metricLabel: "per tooth, anaesthesia included",
+          text: "Microscope, rubber dam and anaesthesia you will not feel. The filling is matched to the shade of your enamel.",
+          tags: ["Microscope", "Painless anaesthesia", "2-year warranty"], view: "Your own tooth, treated under a microscope" },
+        { name: "Implants", metric: "from 290 000 ₸", metricLabel: "implant with placement, crown not included",
+          text: "Digital planning from a 3D scan and the implant placed in one visit. The crown follows in three to four months.",
+          tags: ["3D scan", "Surgical guide", "Lifetime implant warranty"], view: "Titanium implant with a crown" },
+        { name: "Whitening and veneers", metric: "from 65 000 ₸", metricLabel: "in-office whitening, one visit",
+          text: "Whitening, veneers and aligners. We show you the future smile on a model first, then start treatment.",
+          tags: ["Smile design", "Veneers", "Aligners"], view: "Enamel after whitening" },
+        { name: "Hygiene", metric: "22 000 ₸", metricLabel: "cleaning and check-up, 60 minutes",
+          text: "AirFlow and ultrasonic cleaning with a dentist's check-up and a clear plan if anything needs attention.",
+          tags: ["AirFlow", "Check-up", "Every 6 months"], view: "Tooth after professional cleaning" }
+      ],
+      about: { eyebrow: "Clinic",
+        manifesto: "We opened Lumera in 2026 because we were tired of clinics people are afraid to visit. It is quiet here, there is no smell of medicine and no queue, and the doctor explains first and treats second. We do less of what you do not need and more of what your teeth do.",
+        features: [
+          ["microscope", "A microscope in every room", "Up to 25x magnification lets us treat precisely and keep healthy tooth tissue."],
+          ["cube", "3D scans on site", "CT imaging in the clinic: the scan is ready in 5 minutes, no trip to another centre."],
+          ["clock", "No queue", "Your visit starts on time, with a wait of five minutes at most."]
+        ],
+        facts: [["2026", "year founded"], ["9", "doctors on the team"], ["1 200", "patients since opening"], ["7", "days a week, 8:00 to 21:00"]] },
+      journal: { eyebrow: "FAQ", h: ["Answers ", "before your visit."], p: "The questions people ask most often before their first appointment.",
+        posts: [
+          { date: "Treatment", read: "", title: "Will it hurt?",
+            text: "No. We numb the gum with a gel first and then use modern anaesthesia, so you will not feel even the injection. If you feel any discomfort, raise your hand and the doctor stops right away." },
+          { date: "Prices", read: "", title: "How much is the first visit?",
+            text: "A consultation with an examination and a treatment plan costs 8 000 ₸. If treatment starts on the same day, the consultation is free." },
+          { date: "Payment", read: "", title: "Can I pay in instalments?",
+            text: "Yes. Treatment from 150 000 ₸ can be split over 12 months with no extra cost through our partner banks." },
+          { date: "Kids", read: "", title: "Do you treat children?",
+            text: "Yes, from age three. The first visit is just a meeting: the child looks around the room and sits in the chair without any treatment." }
+        ] },
+      footer: { eyebrow: "Booking", h: ["Book a visit ", "without a call."],
+        form: { name: "Your name", phone: "Phone", service: "Service", time: "Preferred time", times: ["Morning", "Afternoon", "Evening"], consult: "Consultation", submit: "Send request",
+          phoneError: "Enter a phone number with at least 10 digits.", nameError: "Enter your name.",
+          done: "Thank you, {name}. This is a demo page, so the request was not sent anywhere. In a real clinic an administrator would call you back." },
+        note: "© 2026 Lumera®. A fictional clinic, concept page for a portfolio.", top: "Back to top ↑" }
+    },
+    ru: {
+      nav: ["Главная", "Услуги", "О клинике", "Вопросы"], navLabel: "Основное меню", menu: "Меню", close: "Закрыть", cta: "Услуги и цены", drag: "Потяните, чтобы повернуть", toothAria: "3D-модель зуба. Потяните, чтобы повернуть.",
+      hero: ["Без страха ", "и боли,", " улыбка ", "на годы."],
+      heroText: "Стоматология, где тихо и спокойно. Лечим под микроскопом, планируем по 3D-снимку и объясняем каждый шаг до начала лечения.",
+      studio: { eyebrow: "Услуги", h: ["Лечение без страха, ", "результат на годы."], p: "Цена известна заранее и не меняется в кресле. После первого приёма вы получаете план лечения на руки.", aria: "Подробности" },
+      services: [
+        { name: "Лечение кариеса", metric: "от 18 000 ₸", metricLabel: "за один зуб, с анестезией",
+          text: "Микроскоп, коффердам и анестезия, которую не чувствуешь. Пломбу подбираем по цвету вашей эмали.",
+          tags: ["Микроскоп", "Анестезия без боли", "Гарантия 2 года"], view: "Свой зуб, вылеченный под микроскопом" },
+        { name: "Имплантация", metric: "от 290 000 ₸", metricLabel: "имплант с установкой, без коронки",
+          text: "Цифровое планирование по 3D-снимку и установка импланта за один визит. Коронка через 3–4 месяца.",
+          tags: ["3D-снимок", "Хирургический шаблон", "Пожизненная гарантия на имплант"], view: "Титановый имплант с коронкой" },
+        { name: "Отбеливание и виниры", metric: "от 65 000 ₸", metricLabel: "отбеливание в клинике за один визит",
+          text: "Отбеливание, виниры и элайнеры. Сначала показываем будущую улыбку на модели, потом начинаем лечение.",
+          tags: ["Дизайн улыбки", "Виниры", "Элайнеры"], view: "Эмаль после отбеливания" },
+        { name: "Гигиена", metric: "22 000 ₸", metricLabel: "чистка и осмотр, 60 минут",
+          text: "Чистка AirFlow и ультразвуком с осмотром врача и понятным планом, если что-то нужно лечить.",
+          tags: ["AirFlow", "Осмотр", "Раз в полгода"], view: "Зуб после профессиональной чистки" }
+      ],
+      about: { eyebrow: "О клинике",
+        manifesto: "Мы открыли Lumera в 2026 году, потому что устали от клиник, куда страшно идти. Здесь тихо, нет запаха лекарств и очередей, а врач сначала объясняет и только потом лечит. Мы делаем меньше лишнего и больше того, что действительно нужно вашим зубам.",
+        features: [
+          ["microscope", "Микроскоп в каждом кабинете", "Увеличение до 25 раз помогает лечить точно и сохранять здоровые ткани зуба."],
+          ["cube", "3D-диагностика в клинике", "Компьютерная томография на месте: снимок готов за 5 минут, не нужно ехать в другой центр."],
+          ["clock", "Без очередей", "Приём начинается в назначенное время, ожидание не больше пяти минут."]
+        ],
+        facts: [["2026", "год основания"], ["9", "врачей в команде"], ["1 200", "пациентов с открытия"], ["7", "дней в неделю, с 8:00 до 21:00"]] },
+      journal: { eyebrow: "Вопросы", h: ["Отвечаем ", "до приёма."], p: "Вопросы, которые чаще всего задают перед первым визитом.",
+        posts: [
+          { date: "Лечение", read: "", title: "Будет ли больно?",
+            text: "Нет. Сначала обезболиваем десну гелем, потом делаем современную анестезию, поэтому вы не почувствуете даже укол. Если станет некомфортно, поднимите руку, и врач сразу остановится." },
+          { date: "Цены", read: "", title: "Сколько стоит первый приём?",
+            text: "Консультация с осмотром и планом лечения стоит 8 000 ₸. Если лечение начинается в тот же день, консультация бесплатна." },
+          { date: "Оплата", read: "", title: "Можно ли в рассрочку?",
+            text: "Да. Лечение от 150 000 ₸ можно разделить на 12 месяцев без переплаты через банки-партнёры." },
+          { date: "Дети", read: "", title: "Принимаете детей?",
+            text: "Да, с трёх лет. Первый визит — просто знакомство: ребёнок осматривает кабинет и садится в кресло без лечения." }
+        ] },
+      footer: { eyebrow: "Запись", h: ["Запишитесь ", "без звонка."],
+        form: { name: "Ваше имя", phone: "Телефон", service: "Услуга", time: "Удобное время", times: ["Утро", "День", "Вечер"], consult: "Консультация", submit: "Отправить заявку",
+          phoneError: "Введите номер телефона, хотя бы 10 цифр.", nameError: "Введите имя.",
+          done: "Спасибо, {name}. Это демо-страница, поэтому заявка никуда не отправлена. В настоящей клинике администратор перезвонил бы вам." },
+        note: "© 2026 Lumera®. Вымышленная клиника, концепт-страница для портфолио.", top: "Наверх ↑" }
+    }
+  };
+
+  const LangCtx = React.createContext({ lang: "en", t: T.en, setLang: () => {} });
+  const useLang = () => React.useContext(LangCtx);
+
+  const VIDEO_URL = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_083109_283f3553-e28f-428b-a723-d639c617eb2b.mp4";
+
+  function useActiveSection() {
+    const [active, setActive] = React.useState("home");
+    React.useEffect(() => {
+      let raf = 0;
+      const update = () => {
+        raf = 0;
+        const line = window.innerHeight * 0.35;
+        let cur = NAV_IDS[0];
+        for (const id of NAV_IDS) {
+          const el = document.getElementById(id);
+          if (el && el.getBoundingClientRect().top <= line) cur = id;
+        }
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) cur = NAV_IDS[NAV_IDS.length - 1];
+        setActive(cur);
+      };
+      const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+      update();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll);
+      return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); cancelAnimationFrame(raf); };
+    }, []);
+    return active;
+  }
+
+  function Logo() {
+    return (
+      <a href="#home" className="text-3xl tracking-tight text-black" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
+        Lumera<sup className="text-[0.45em] align-super ml-0.5">®</sup>
+      </a>
+    );
+  }
+
+  function LangSwitch({ className }) {
+    const { lang, setLang } = useLang();
+    return (
+      <div role="group" aria-label="Language" className={"inline-flex rounded-full border border-black/20 p-0.5 text-xs font-medium " + (className || "")}>
+        {[["en", "EN"], ["ru", "RU"]].map(([k, label]) => (
+          <button key={k} type="button" aria-pressed={lang === k} onClick={() => setLang(k)} lang={k}
+            className={"rounded-full px-3 py-1.5 transition-colors " + (lang === k ? "bg-black text-white" : "text-mute hover:text-black")}>
+            {label}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  function Header({ active }) {
+    const { t } = useLang();
+    const [scrolled, setScrolled] = React.useState(false);
+    const [open, setOpen] = React.useState(false);
+    React.useEffect(() => {
+      const f = () => setScrolled(window.scrollY > 8);
+      f();
+      window.addEventListener("scroll", f, { passive: true });
+      return () => window.removeEventListener("scroll", f);
+    }, []);
+    const link = (label, id, extra) => (
+      <a key={id} href={"#" + id} onClick={() => setOpen(false)} aria-current={active === id ? "true" : undefined}
+        className={"text-sm transition-colors " + (active === id ? "text-black" : "text-mute hover:text-black") + " " + (extra || "")}>
+        {label}
+      </a>
+    );
+    return (
+      <header className={"fixed left-0 right-0 top-0 z-50 transition-colors " + (scrolled || open ? "bg-white/85 backdrop-blur-md border-b border-black/10" : "border-b border-transparent")}
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+        <div className="gutter">
+          <nav className="flex items-center justify-between gap-4 py-5 md:py-6 max-w-7xl mx-auto" aria-label={t.navLabel}>
+            <Logo />
+            <div className="hidden md:flex items-center gap-8">
+              {NAV_IDS.map((id, i) => link(t.nav[i], id))}
+            </div>
+            <div className="hidden md:flex items-center gap-4">
+              <LangSwitch />
+              <a href="#services" className="inline-block rounded-full bg-black text-white text-sm px-6 py-2.5 transition-transform hover:scale-[1.03]">{t.cta}</a>
+            </div>
+            <div className="md:hidden flex items-center gap-3">
+              <LangSwitch />
+              <button type="button" className="text-sm text-black rounded-full border border-black/20 px-4 py-2" aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen(!open)}>
+                {open ? t.close : t.menu}
+              </button>
+            </div>
+          </nav>
+          {open ? (
+            <div id="mobile-menu" className="md:hidden pb-6 flex flex-col gap-5 max-w-7xl mx-auto">
+              {NAV_IDS.map((id, i) => link(t.nav[i], id, "text-lg"))}
+              <a href="#services" onClick={() => setOpen(false)} className="rounded-full bg-black text-white text-base px-6 py-3 text-center">{t.cta}</a>
+            </div>
+          ) : null}
+        </div>
+      </header>
+    );
+  }
+
+  const MEADOW_FRAG = `precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+
+float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float noise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+float fbm(vec2 p){
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 5; i++){ v += a * noise(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; }
+  return v;
+}
+
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  float aspect = uRes.x / uRes.y;
+  float t = uTime;
+  float hz = 0.52;                       // horizon height
+
+  // Sky: pale, slightly cool, warmer near the sun
+  vec3 skyTop = vec3(0.84, 0.87, 0.90);
+  vec3 skyLow = vec3(0.95, 0.95, 0.94);
+  vec3 col = mix(skyLow, skyTop, smoothstep(hz, 1.0, uv.y));
+  vec2 sunP = vec2(0.24, hz + 0.16);
+  float sd = length((uv - sunP) * vec2(aspect, 1.0));
+  col += vec3(1.0, 0.96, 0.88) * (0.22 * exp(-sd * 3.2) + 0.08 * exp(-sd * 0.9));
+
+  // Drifting clouds
+  vec2 cp = vec2(uv.x * aspect * 1.4 + t * 0.012, uv.y * 3.2);
+  float cl = fbm(cp + vec2(0.0, t * 0.004));
+  cl = smoothstep(0.52, 0.85, cl) * smoothstep(hz + 0.04, hz + 0.3, uv.y);
+  col = mix(col, vec3(0.98, 0.98, 0.97), cl * 0.55);
+
+  // Distant hills, two hazy layers
+  float x = uv.x * aspect;
+  float h1 = hz + 0.12 * fbm(vec2(x * 0.75, 2.0)) - 0.005;
+  float h2 = hz + 0.05 * fbm(vec2(x * 1.7 + 5.0, 7.0)) - 0.004;
+  col = mix(col, vec3(0.76, 0.80, 0.82), smoothstep(h1 + 0.002, h1 - 0.002, uv.y) * 0.8);
+  col = mix(col, vec3(0.63, 0.68, 0.67), smoothstep(h2 + 0.002, h2 - 0.002, uv.y) * 0.85);
+
+  // Two trees on the plain, swaying slightly
+  for (int k = 0; k < 2; k++){
+    float fk = float(k);
+    float sc = mix(1.0, 0.55, fk);
+    vec2 tp = vec2(mix(0.70, 0.83, fk) * aspect, hz + mix(-0.012, 0.0, fk));
+    vec2 q = (vec2(x, uv.y) - tp) / sc;
+    q.x -= 0.003 * sin(t * 0.7 + fk) * smoothstep(0.0, 0.08, q.y);
+    float trunk = step(abs(q.x + q.y * 0.03), 0.0028) * step(0.0, q.y) * step(q.y, 0.04);
+    float n = fbm(q * 90.0 + fk * 3.0) * 0.011;
+    float c1 = length((q - vec2(0.0, 0.052)) * vec2(1.0, 1.35)) - 0.026;
+    float c2 = length((q - vec2(-0.02, 0.042)) * vec2(1.0, 1.5)) - 0.018;
+    float c3 = length((q - vec2(0.021, 0.045)) * vec2(1.0, 1.5)) - 0.017;
+    float crown = smoothstep(0.003, 0.0, min(c1, min(c2, c3)) - n);
+    col = mix(col, mix(vec3(0.30, 0.34, 0.30), vec3(0.55, 0.59, 0.57), fk), max(trunk, crown) * 0.92);
+  }
+
+  // Field in perspective with wind waves
+  if (uv.y < hz){
+    float d = hz - uv.y;
+    float z = 0.08 / (d + 0.004);           // distance into the field
+    float wx = (uv.x - 0.5) * aspect * z;
+    vec3 far = vec3(0.66, 0.69, 0.60);
+    vec3 near = vec3(0.36, 0.41, 0.30);
+    vec3 g = mix(near, far, smoothstep(0.0, 0.35, 1.0 / (1.0 + d * 6.0) - 0.15));
+    // Grass texture, isotropic in field space
+    vec2 fw = vec2(wx, z);
+    float clumps = fbm(fw * vec2(3.0, 2.2));
+    float grass = fbm(fw * vec2(34.0, 22.0));
+    float blades = noise(fw * vec2(220.0, 40.0));
+    // Wind: bright bands rolling across the field
+    float wind = fbm(vec2(wx * 0.6 - t * 0.2, z * 0.45 - t * 0.32));
+    wind = smoothstep(0.38, 0.78, wind);
+    g *= 0.72 + 0.3 * clumps + 0.16 * grass + 0.12 * blades * smoothstep(0.05, 0.4, d);
+    g = mix(g, g * 1.2 + vec3(0.03, 0.03, 0.0), wind * 0.55);
+    // Sun-side warmth
+    g += vec3(0.05, 0.04, 0.0) * (1.0 - smoothstep(0.0, 0.6, uv.x));
+    // Atmospheric haze toward the horizon
+    float haze = exp(-d * 9.0);
+    col = mix(g, vec3(0.88, 0.89, 0.88), haze * 0.75);
+  }
+
+  // Low mist drifting along the horizon
+  float mist = fbm(vec2(x * 2.0 + t * 0.03, uv.y * 14.0 - t * 0.02));
+  float band = exp(-pow((uv.y - hz) * 16.0, 2.0));
+  col = mix(col, vec3(0.96, 0.96, 0.95), band * mist * 0.55);
+
+  // Grain and gentle vignette
+  col += (hash(gl_FragCoord.xy + fract(t) * 91.0) - 0.5) * 0.025;
+  col *= 1.0 - 0.12 * pow(abs(uv.x - 0.5) * 1.6, 2.0);
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+  function Meadow() {
+    const ref = React.useRef(null);
+    React.useEffect(() => {
+      const c = ref.current;
+      let gl = null;
+      try { gl = c.getContext("webgl", { antialias: false, alpha: false }); } catch (e) {}
+      if (!gl) { c.style.display = "none"; return; }
+      const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return gl.getShaderParameter(o, gl.COMPILE_STATUS) ? o : null; };
+      const vs = sh(gl.VERTEX_SHADER, "attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}");
+      const fs = sh(gl.FRAGMENT_SHADER, MEADOW_FRAG);
+      if (!vs || !fs) { c.style.display = "none"; return; }
+      const pr = gl.createProgram(); gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr); gl.useProgram(pr);
+      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(pr, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      const uRes = gl.getUniformLocation(pr, "uRes"), uTime = gl.getUniformLocation(pr, "uTime");
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const t0 = performance.now();
+      let raf = 0, visible = true, shown = false;
+      const draw = (now) => {
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        const w = Math.max(1, Math.floor(c.clientWidth * dpr)), h = Math.max(1, Math.floor(c.clientHeight * dpr));
+        if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+        gl.viewport(0, 0, w, h);
+        gl.uniform2f(uRes, w, h);
+        gl.uniform1f(uTime, 12 + (now - t0) / 1000);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        if (!shown) { shown = true; c.classList.add("is-on"); }
+      };
+      const loop = (now) => { draw(now); if (visible && !reduce) raf = requestAnimationFrame(loop); };
+      const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; cancelAnimationFrame(raf); if (visible) raf = requestAnimationFrame(loop); });
+      io.observe(c);
+      const ro = new ResizeObserver(() => { if (reduce || !visible) draw(performance.now()); });
+      ro.observe(c);
+      raf = requestAnimationFrame(loop);
+      return () => { cancelAnimationFrame(raf); io.disconnect(); ro.disconnect(); };
+    }, []);
+    return <canvas ref={ref} className="meadow-canvas absolute inset-0 block w-full h-full" aria-hidden="true"></canvas>;
+  }
+
+  function useInView(ref, threshold) {
+    const [inView, setInView] = React.useState(false);
+    React.useEffect(() => {
+      const el = ref.current;
+      if (!el) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) { setInView(true); return; }
+      const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); io.disconnect(); } }, { threshold: threshold || 0.12, rootMargin: "0px 0px -6% 0px" });
+      io.observe(el);
+      return () => io.disconnect();
+    }, []);
+    return inView;
+  }
+
+  function Reveal({ as, delay, className, children }) {
+    const ref = React.useRef(null);
+    const inView = useInView(ref);
+    const Tag = as || "div";
+    return <Tag ref={ref} className={"reveal " + (inView ? "is-in " : "") + (className || "")} style={{ transitionDelay: (delay || 0) + "s" }}>{children}</Tag>;
+  }
+
+  function CountUp({ value }) {
+    const ref = React.useRef(null);
+    const inView = useInView(ref, 0.4);
+    const spaced = /\s/.test(value);
+    const target = parseInt(String(value).replace(/\s/g, ""), 10);
+    const fmt = (n) => spaced ? String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") : String(n);
+    const [shown, setShown] = React.useState(value);
+    React.useEffect(() => {
+      if (!inView || isNaN(target) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setShown(value); return; }
+      let raf = 0; const start = performance.now(), dur = 1600;
+      const from = target > 1000 ? target - 120 : 0;
+      const step = (now) => {
+        const k = Math.min(1, (now - start) / dur), e = 1 - Math.pow(1 - k, 3);
+        setShown(fmt(Math.round(from + (target - from) * e)));
+        if (k < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+      return () => cancelAnimationFrame(raf);
+    }, [inView, value]);
+    return <span ref={ref}>{shown}</span>;
+  }
+
+  function BackgroundVideo() {
+    const ref = React.useRef(null);
+    React.useEffect(() => {
+      const v = ref.current;
+      if (!v) return;
+      const FADE = 0.5;
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let raf = 0, timer = 0;
+      const tick = () => {
+        const d = v.duration, t = v.currentTime;
+        if (d && isFinite(d)) {
+          const o = Math.max(0, Math.min(1, t / FADE, (d - t) / FADE));
+          v.style.opacity = String(o);
+        }
+        raf = requestAnimationFrame(tick);
+      };
+      const onEnded = () => {
+        v.style.opacity = "0";
+        clearTimeout(timer);
+        timer = setTimeout(() => { v.currentTime = 0; const p = v.play(); if (p && p.catch) p.catch(() => {}); }, 100);
+      };
+      if (reduce) {
+        const show = () => { v.style.opacity = "1"; };
+        v.addEventListener("loadeddata", show);
+        return () => v.removeEventListener("loadeddata", show);
+      }
+      v.addEventListener("ended", onEnded);
+      raf = requestAnimationFrame(tick);
+      const p = v.play(); if (p && p.catch) p.catch(() => {});
+      return () => { cancelAnimationFrame(raf); clearTimeout(timer); v.removeEventListener("ended", onEnded); };
+    }, []);
+    return (
+      <video ref={ref} className="absolute" src={VIDEO_URL} muted playsInline autoPlay preload="auto" aria-hidden="true"
+        style={{ inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0 }} />
+    );
+  }
+
+  function Hero() {
+    const { t, lang } = useLang();
+    const scene = React.useRef(null);
+    React.useEffect(() => {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      let raf = 0;
+      const apply = () => { raf = 0; const y = window.scrollY; if (scene.current && y < window.innerHeight * 1.5) scene.current.style.transform = "translate3d(0," + (y * 0.28).toFixed(1) + "px,0)"; };
+      const onScroll = () => { if (!raf) raf = requestAnimationFrame(apply); };
+      window.addEventListener("scroll", onScroll, { passive: true });
+      return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf); };
+    }, []);
+    let k = 0;
+    const parts = [[t.hero[0], false], [t.hero[1], true], [t.hero[2], false], [t.hero[3], true]];
+    const words = parts.map(([txt, it], pi) => txt.split(/(\s+)/).map((w, wi) => {
+      if (!w.trim()) return w;
+      const d = 0.08 * k++;
+      return <span key={lang + pi + "-" + wi} className={"word" + (it ? " italic text-mute" : "")} style={{ animationDelay: d + "s" }}>{w}</span>;
+    }));
+    return (
+      <section id="home" className="relative min-h-screen w-full overflow-hidden bg-white">
+        <div ref={scene} className="absolute inset-x-0 bottom-0 z-0 meadow-bg will-change-transform" style={{ top: "300px" }} aria-hidden="true">
+          <Meadow />
+          <BackgroundVideo />
+        </div>
+        <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true"
+          style={{ background: "linear-gradient(180deg, var(--background) 0, var(--background) 300px, rgba(255,255,255,0) 440px, rgba(255,255,255,0) 78%, var(--background) 100%)" }}></div>
+        <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true"
+          style={{ background: "radial-gradient(ellipse 58% 42% at 50% 40%, rgba(255,255,255,0.82), rgba(255,255,255,0) 72%)" }}></div>
+
+        <div className="relative z-10 gutter flex flex-col items-center justify-center text-center pb-40"
+          style={{ paddingTop: "calc(8rem - 75px + 5.5rem)" }}>
+          <h1 className="font-display font-normal text-black text-5xl sm:text-7xl md:text-8xl max-w-7xl"
+            style={{ lineHeight: 0.95, letterSpacing: "-0.0256em" }}>
+            {words}
+          </h1>
+          <p key={"p" + lang} className="animate-fade-rise-delay text-base sm:text-lg text-mute max-w-2xl mt-8 leading-relaxed" style={{ animationDelay: "0.55s" }}>
+            {t.heroText}
+          </p>
+          <a href="#services" className="animate-fade-rise-delay-2 inline-block rounded-full bg-black text-white text-base px-14 py-5 mt-12 transition-transform hover:scale-[1.03]" style={{ animationDelay: "0.75s" }}>
+            {t.cta}
+          </a>
+          <a href="#services" className="animate-fade-rise-delay-2 mt-16 text-black/70 hover:text-black transition-colors" style={{ animationDelay: "1.1s" }} aria-label={t.nav[1]}>
+            <span className="block h-12 w-7 rounded-full border border-black/30 relative">
+              <span className="absolute left-1/2 top-2 -ml-[2px] h-2 w-1 rounded-full bg-black/60 scroll-dot"></span>
+            </span>
+          </a>
+        </div>
+      </section>
+    );
+  }
+
+  function Eyebrow({ children }) {
+    return <p className="text-xs uppercase tracking-[0.18em] text-mute font-medium">{children}</p>;
+  }
+
+  const TOOTH_FRAG = `precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+uniform vec2 uRot;      // yaw, pitch
+uniform float uImplant; // 0 natural roots, 1 titanium implant
+uniform float uWhite;   // 0 natural shade, 1 whitened
+
+float smin(float a, float b, float k){ float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0); return mix(b, a, h) - k * h * (1.0 - h); }
+float smax(float a, float b, float k){ return -smin(-a, -b, k); }
+float sdRoundBox(vec3 p, vec3 b, float r){ vec3 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r; }
+float sdRoundCone(vec3 p, vec3 a, vec3 b, float r1, float r2){
+  vec3 ba = b - a; float l2 = dot(ba, ba), rr = r1 - r2, a2 = l2 - rr * rr, il2 = 1.0 / l2;
+  vec3 pa = p - a; float y = dot(pa, ba), z = y - l2;
+  vec3 xv = pa * l2 - ba * y; float x2 = dot(xv, xv), y2 = y * y * l2, z2 = z * z * l2;
+  float k = sign(rr) * rr * rr * x2;
+  if (sign(z) * a2 * z2 > k) return sqrt(x2 + z2) * il2 - r2;
+  if (sign(y) * a2 * y2 < k) return sqrt(x2 + y2) * il2 - r1;
+  return (sqrt(x2 * a2 * il2) + y * rr) * il2 - r1;
+}
+
+float crownCarved(vec3 p){
+  float d = sdRoundBox(p - vec3(0.0, 0.3, 0.0), vec3(0.6, 0.3, 0.54), 0.3);
+  d = smin(d, length(p - vec3( 0.29, 0.6,  0.26)) - 0.3, 0.18);
+  d = smin(d, length(p - vec3(-0.29, 0.6,  0.26)) - 0.3, 0.18);
+  d = smin(d, length(p - vec3( 0.29, 0.58, -0.26)) - 0.29, 0.18);
+  d = smin(d, length(p - vec3(-0.29, 0.6, -0.26)) - 0.3, 0.18);
+  // fissures: narrow valleys on the occlusal surface
+  float valley = min(abs(p.x + 0.02 * sin(p.z * 7.0)), abs(p.z));
+  float cut = valley - 0.04 + 0.9 * max(0.0, 0.72 - p.y);
+  d = smax(d, -cut, 0.05);
+  // waist at the neck
+  d += 0.06 * smoothstep(0.15, -0.05, p.y) * smoothstep(-0.25, -0.05, p.y);
+  return d;
+}
+
+float roots(vec3 p){
+  vec3 q = p; q.x += 0.06 * q.y * q.y;
+  float r1 = sdRoundCone(q, vec3( 0.3, 0.05,  0.12), vec3( 0.36, -1.15,  0.18), 0.26, 0.07);
+  float r2 = sdRoundCone(q, vec3(-0.3, 0.05,  0.12), vec3(-0.38, -1.1,  0.2), 0.26, 0.07);
+  float r3 = sdRoundCone(p, vec3( 0.0, 0.05, -0.22), vec3( 0.02, -1.05, -0.42), 0.28, 0.08);
+  float trunk = sdRoundCone(p, vec3(0.0, 0.1, 0.0), vec3(0.0, -0.3, 0.0), 0.52, 0.36);
+  return smin(smin(smin(r1, r2, 0.12), r3, 0.12), trunk, 0.15);
+}
+
+float screw(vec3 p){
+  float y = p.y;
+  float taper = mix(0.24, 0.15, clamp((-y - 0.15) / 1.05, 0.0, 1.0));
+  float a = atan(p.z, p.x);
+  float thread = 0.035 * sin(y * 42.0 + a);
+  float body = length(p.xz) - taper - thread * step(y, -0.18);
+  body = max(body, max(y - 0.02, -y - 1.2));
+  float tip = length(p - vec3(0.0, -1.2, 0.0)) - 0.15;
+  float abut = max(length(p.xz) - 0.3, max(y - 0.15, -y - 0.05));
+  return smin(min(body, tip), abut, 0.04);
+}
+
+float map(vec3 p, out float mat){
+  float c = crownCarved(p);
+  float r = mix(roots(p), screw(p), uImplant);
+  float d = smin(c, r, mix(0.12, 0.02, uImplant));
+  // material: 0 enamel, 1 root dentin, 2 titanium
+  float below = smoothstep(0.08, -0.08, p.y);
+  mat = below * (1.0 + uImplant);
+  return d;
+}
+float map(vec3 p){ float m; return map(p, m); }
+
+vec3 normal(vec3 p){
+  vec2 e = vec2(0.0015, 0.0);
+  return normalize(vec3(map(p + e.xyy) - map(p - e.xyy), map(p + e.yxy) - map(p - e.yxy), map(p + e.yyx) - map(p - e.yyx)));
+}
+float ao(vec3 p, vec3 n){
+  float o = 0.0, s = 1.0;
+  for (int i = 1; i <= 5; i++){ float h = 0.03 * float(i); o += (h - map(p + n * h)) * s; s *= 0.7; }
+  return clamp(1.0 - 2.2 * o, 0.0, 1.0);
+}
+
+mat3 rotY(float a){ float c = cos(a), s = sin(a); return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c); }
+mat3 rotX(float a){ float c = cos(a), s = sin(a); return mat3(1.0, 0.0, 0.0, 0.0, c, s, 0.0, -s, c); }
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / min(uRes.x, uRes.y * 0.9);
+  vec3 ro = vec3(0.0, 0.0, 5.5);
+  vec3 rd = normalize(vec3(uv, -1.75));
+  mat3 R = rotY(uRot.x) * rotX(uRot.y);
+  vec3 center = vec3(0.0, -0.28, 0.0);
+  ro = R * ro; rd = R * rd;
+  ro += center;
+
+  float t = 0.0, d = 1.0;
+  for (int i = 0; i < 110; i++){
+    d = map(ro + rd * t);
+    if (d < 0.0008 || t > 9.0) break;
+    t += d * 0.85;
+  }
+  if (t > 9.0 || d > 0.01){ gl_FragColor = vec4(0.0); return; }
+
+  vec3 p = ro + rd * t;
+  float mat; map(p, mat);
+  vec3 n = normal(p);
+  vec3 v = -rd;
+  vec3 L1 = normalize(R * vec3(0.6, 0.8, 0.7));
+  vec3 L2 = normalize(R * vec3(-0.8, 0.2, 0.4));
+  vec3 L3 = normalize(R * vec3(0.0, -0.4, -1.0));
+
+  vec3 enamel = mix(vec3(0.93, 0.9, 0.83), vec3(0.985, 0.985, 0.975), uWhite);
+  vec3 dentin = vec3(0.9, 0.83, 0.7);
+  vec3 titan = vec3(0.6, 0.63, 0.67);
+  vec3 base = mat < 1.0 ? mix(enamel, dentin, mat) : mix(dentin, titan, mat - 1.0);
+  float metal = clamp(mat - 1.0, 0.0, 1.0);
+
+  float occ = ao(p, n);
+  float wrap1 = clamp((dot(n, L1) + 0.35) / 1.35, 0.0, 1.0);
+  float wrap2 = clamp((dot(n, L2) + 0.5) / 1.5, 0.0, 1.0);
+  vec3 col = base * (0.28 + 0.75 * wrap1 + 0.25 * wrap2) * mix(1.0, 0.55, metal);
+  // subsurface glow through thin edges
+  float sss = pow(clamp(dot(v, -L1) + 0.25, 0.0, 1.0), 2.0) * (1.0 - metal);
+  col += vec3(1.0, 0.86, 0.7) * sss * 0.12;
+  // specular: glossy enamel, brighter when whitened, sharper on titanium
+  float shin = mix(mix(48.0, 90.0, uWhite), 140.0, metal);
+  float sp = pow(max(dot(n, normalize(L1 + v)), 0.0), shin);
+  float sp2 = pow(max(dot(n, normalize(L2 + v)), 0.0), shin * 0.6);
+  float fres = pow(1.0 - max(dot(n, v), 0.0), 3.0);
+  col += vec3(1.0) * (sp * mix(0.55, 0.9, max(uWhite, metal)) + sp2 * 0.25);
+  col += vec3(0.85, 0.9, 1.0) * fres * 0.35;
+  col += vec3(0.7, 0.8, 1.0) * pow(max(dot(n, L3), 0.0), 2.0) * 0.12;
+  col *= mix(0.55, 1.0, occ);
+  col = pow(col, vec3(0.95));
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+  const TOOTH_MODES = [{ imp: 0, white: 0.15 }, { imp: 1, white: 0.3 }, { imp: 0, white: 1 }, { imp: 0, white: 0.55 }];
+
+  function ToothViewer({ mode, label, hint, aria }) {
+    const ref = React.useRef(null);
+    const target = React.useRef(TOOTH_MODES[0]);
+    React.useEffect(() => { target.current = TOOTH_MODES[mode] || TOOTH_MODES[0]; }, [mode]);
+    React.useEffect(() => {
+      const c = ref.current;
+      let gl = null;
+      try { gl = c.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false }); } catch (e) {}
+      if (!gl) return;
+      const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return gl.getShaderParameter(o, gl.COMPILE_STATUS) ? o : null; };
+      const vs = sh(gl.VERTEX_SHADER, "attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}");
+      const fs = sh(gl.FRAGMENT_SHADER, TOOTH_FRAG);
+      if (!vs || !fs) return;
+      const pr = gl.createProgram(); gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr); gl.useProgram(pr);
+      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(pr, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      const U = (n) => gl.getUniformLocation(pr, n);
+      const uRes = U("uRes"), uTime = U("uTime"), uRot = U("uRot"), uImp = U("uImplant"), uWhite = U("uWhite");
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const st = { yaw: 0.6, pitch: 0.18, vy: 0, imp: target.current.imp, white: target.current.white, drag: false, lx: 0, ly: 0, last: 0 };
+      let raf = 0, visible = true;
+      const draw = (now) => {
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+        const w = Math.max(1, Math.floor(c.clientWidth * dpr)), h = Math.max(1, Math.floor(c.clientHeight * dpr));
+        if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+        gl.viewport(0, 0, w, h);
+        gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform2f(uRes, w, h); gl.uniform1f(uTime, now / 1000);
+        gl.uniform2f(uRot, st.yaw, st.pitch); gl.uniform1f(uImp, st.imp); gl.uniform1f(uWhite, st.white);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      };
+      const loop = (now) => {
+        const tg = target.current;
+        st.imp += (tg.imp - st.imp) * 0.12; st.white += (tg.white - st.white) * 0.1;
+        if (!st.drag) {
+          st.yaw += st.vy; st.vy *= 0.94;
+          if (!reduce && now - st.last > 2200) st.yaw += 0.005;
+        }
+        draw(now);
+        if (visible) raf = requestAnimationFrame(loop);
+      };
+      const down = (e) => { st.drag = true; st.lx = e.clientX; st.ly = e.clientY; st.vy = 0; c.setPointerCapture && c.setPointerCapture(e.pointerId); };
+      const move = (e) => {
+        if (!st.drag) return;
+        const dx = e.clientX - st.lx, dy = e.clientY - st.ly; st.lx = e.clientX; st.ly = e.clientY;
+        st.yaw += dx * 0.012; st.vy = dx * 0.012;
+        if (e.pointerType === "mouse") st.pitch = Math.max(-0.7, Math.min(0.9, st.pitch + dy * 0.008));
+      };
+      const up = () => { st.drag = false; st.last = performance.now(); };
+      c.addEventListener("pointerdown", down); c.addEventListener("pointermove", move);
+      c.addEventListener("pointerup", up); c.addEventListener("pointercancel", up);
+      const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; cancelAnimationFrame(raf); if (visible) raf = requestAnimationFrame(loop); });
+      io.observe(c);
+      raf = requestAnimationFrame(loop);
+      return () => { cancelAnimationFrame(raf); io.disconnect(); c.removeEventListener("pointerdown", down); c.removeEventListener("pointermove", move); c.removeEventListener("pointerup", up); c.removeEventListener("pointercancel", up); };
+    }, []);
+    return (
+      <div className="tooth-card relative rounded-[2rem] border border-black/10 overflow-hidden h-[380px] md:h-[440px]">
+        <canvas ref={ref} role="img" aria-label={aria} className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing" style={{ touchAction: "pan-y" }}></canvas>
+        <div className="absolute left-5 top-5 right-5 flex justify-between gap-3 pointer-events-none">
+          <span key={label} className="animate-fade-rise rounded-full bg-white/80 backdrop-blur px-4 py-2 text-sm text-black border border-black/10">{label}</span>
+        </div>
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-5 rounded-full bg-white/80 backdrop-blur px-4 py-2 text-xs text-mute border border-black/10 pointer-events-none whitespace-nowrap">↔ {hint}</div>
+      </div>
+    );
+  }
+
+  function Tilt({ as, className, children, max, ...rest }) {
+    const ref = React.useRef(null);
+    const ok = React.useMemo(() => window.matchMedia("(hover: hover) and (pointer: fine)").matches && !window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+    const m = max || 5;
+    const onMove = (e) => {
+      const el = ref.current; if (!el) return;
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      el.style.setProperty("--mx", (x * 100).toFixed(1) + "%"); el.style.setProperty("--my", (y * 100).toFixed(1) + "%");
+      if (ok) el.style.transform = "perspective(1000px) rotateX(" + ((0.5 - y) * m).toFixed(2) + "deg) rotateY(" + ((x - 0.5) * m).toFixed(2) + "deg) translateY(-4px)";
+    };
+    const onLeave = () => { if (ref.current) ref.current.style.transform = ""; };
+    const Tag = as || "div";
+    return <Tag ref={ref} onPointerMove={onMove} onPointerLeave={onLeave} className={"tilt " + (className || "")} {...rest}>{children}</Tag>;
+  }
+
+  function Icon({ name }) {
+    const common = { width: 26, height: 26, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true };
+    if (name === "microscope") return <svg {...common}><path d="M9.5 3h3v7h-3z" /><path d="M11 10v2.5" /><path d="M6 21h12" /><path d="M9 17.5h6" /><path d="M14.5 8.5a5.5 5.5 0 0 1-2.5 9" /></svg>;
+    if (name === "cube") return <svg {...common}><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" /><path d="M12 12l8-4.5" /><path d="M12 12v9" /><path d="M12 12L4 7.5" /></svg>;
+    return <svg {...common}><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></svg>;
+  }
+
+  function Studio() {
+    const { t } = useLang();
+    const S = t.studio;
+    const [sel, setSel] = React.useState(0);
+    const pick = (i) => () => setSel(i);
+    const key = (i) => (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSel(i); } };
+    return (
+      <section id="services" className="bg-white">
+        <div className="gutter">
+          <div className="max-w-7xl mx-auto py-28 md:py-36 grid md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-10 md:gap-14">
+            <div className="md:sticky md:top-24 self-start min-w-0">
+              <Reveal>
+                <Eyebrow>{S.eyebrow}</Eyebrow>
+                <h2 className="font-display font-normal text-black text-5xl sm:text-6xl mt-5" style={{ lineHeight: 0.98, letterSpacing: "-0.025em", textWrap: "balance" }}>
+                  {S.h[0]}<em className="italic text-mute">{S.h[1]}</em>
+                </h2>
+                <p className="mt-6 text-base sm:text-lg text-mute leading-relaxed max-w-md">{S.p}</p>
+              </Reveal>
+              <Reveal delay={0.15} className="mt-8">
+                <ToothViewer mode={sel} label={t.services[sel].view} hint={t.drag} aria={t.toothAria} />
+              </Reveal>
+            </div>
+            <div className="min-w-0 grid gap-4 content-start">
+              {t.services.map((s, i) => (
+                <Reveal key={i} delay={i * 0.1}>
+                  <Tilt as="article" role="button" tabIndex={0} aria-pressed={sel === i}
+                    onMouseEnter={pick(i)} onFocus={pick(i)} onClick={pick(i)} onKeyDown={key(i)}
+                    className={"rounded-[1.75rem] border bg-white p-7 md:p-8 cursor-pointer overflow-hidden " + (sel === i ? "border-black" : "border-black/15")}>
+                    <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+                      <h3 className="font-display text-4xl md:text-[2.75rem] text-black leading-none tracking-tight">{s.name}</h3>
+                      <span className={"rounded-full px-4 py-2 text-sm whitespace-nowrap tabular-nums transition-colors " + (sel === i ? "bg-black text-white" : "border border-black/15 text-black")}>{s.metric}</span>
+                    </div>
+                    <p className="mt-4 text-base text-mute leading-relaxed max-w-xl">{s.text}</p>
+                    <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
+                      <ul className="flex flex-wrap gap-2" aria-label={S.aria}>
+                        {s.tags.map((x) => <li key={x} className="rounded-full bg-[#f2f3f4] text-xs text-black px-3 py-1.5">{x}</li>)}
+                      </ul>
+                      <span className="text-xs text-mute">{s.metricLabel}</span>
+                    </div>
+                  </Tilt>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function Manifesto({ text }) {
+    const ref = React.useRef(null);
+    React.useEffect(() => {
+      const root = ref.current;
+      const words = Array.from(root.querySelectorAll("[data-w]"));
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let raf = 0;
+      const update = () => {
+        raf = 0;
+        const r = root.getBoundingClientRect(), vh = window.innerHeight;
+        const p = reduce ? 1 : Math.min(1, Math.max(0, (vh * 0.9 - r.top) / (r.height + vh * 0.2)));
+        const lit = Math.round(p * words.length * 1.1);
+        words.forEach((w, i) => { w.style.color = i < lit ? "#000000" : "#6F6F6F"; });
+      };
+      const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+      update();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll);
+      return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); cancelAnimationFrame(raf); };
+    }, [text]);
+    return (
+      <p ref={ref} className="font-display text-black text-4xl sm:text-5xl md:text-6xl max-w-5xl" style={{ lineHeight: 1.05, letterSpacing: "-0.02em" }}>
+        {text.split(" ").map((w, i) => <span key={i} data-w style={{ color: "#6F6F6F", transition: "color 0.3s ease" }}>{w}{" "}</span>)}
+      </p>
+    );
+  }
+
+  function About() {
+    const { t } = useLang();
+    return (
+      <section id="clinic" className="bg-white border-t border-black/10">
+        <div className="gutter">
+          <div className="max-w-7xl mx-auto py-28 md:py-36">
+            <Reveal>
+              <Eyebrow>{t.about.eyebrow}</Eyebrow>
+              <div className="mt-8"><Manifesto text={t.about.manifesto} /></div>
+            </Reveal>
+            <div className="mt-16 grid gap-4 md:grid-cols-3">
+              {t.about.features.map(([icon, title, text], i) => (
+                <Reveal key={i} delay={i * 0.1}>
+                  <Tilt className="h-full rounded-[1.75rem] bg-[#f4f5f6] border border-transparent hover:border-black/10 p-8 overflow-hidden">
+                    <span className="grid place-items-center h-14 w-14 rounded-full bg-white border border-black/10 text-black"><Icon name={icon} /></span>
+                    <h3 className="mt-8 font-display text-3xl text-black leading-none tracking-tight">{title}</h3>
+                    <p className="mt-3 text-base text-mute leading-relaxed">{text}</p>
+                  </Tilt>
+                </Reveal>
+              ))}
+            </div>
+            <dl className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {t.about.facts.map(([n, l], i) => (
+                <Reveal key={i} delay={i * 0.1} className="min-w-0">
+                  <div className="fact-circle mx-auto w-full max-w-[260px] aspect-square rounded-full border border-black/15 text-black grid place-items-center text-center p-5">
+                    <div>
+                      <dt className="font-display text-5xl md:text-6xl leading-none tabular-nums"><CountUp value={n} /></dt>
+                      <dd className="fact-label mt-3 text-xs md:text-sm text-mute max-w-[14ch] mx-auto leading-snug transition-colors">{l}</dd>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </dl>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function Journal() {
+    const { t } = useLang();
+    const J = t.journal;
+    const [open, setOpen] = React.useState(0);
+    return (
+      <section id="faq" className="bg-white border-t border-black/10">
+        <div className="gutter">
+          <div className="max-w-7xl mx-auto py-28 md:py-36">
+            <Reveal className="flex flex-wrap items-end justify-between gap-6">
+              <div>
+                <Eyebrow>{J.eyebrow}</Eyebrow>
+                <h2 className="font-display font-normal text-black text-5xl sm:text-6xl mt-5" style={{ lineHeight: 0.98, letterSpacing: "-0.025em" }}>
+                  {J.h[0]}<em className="italic text-mute">{J.h[1]}</em>
+                </h2>
+              </div>
+              <p className="text-base text-mute max-w-sm leading-relaxed">{J.p}</p>
+            </Reveal>
+            <div className="mt-14 grid gap-3">
+              {J.posts.map((p, i) => {
+                const isOpen = open === i;
+                return (
+                  <Reveal key={i} delay={i * 0.08}>
+                    <div className={"rounded-[1.5rem] border px-6 md:px-8 transition-colors duration-300 " + (isOpen ? "bg-[#f4f5f6] border-transparent" : "bg-white border-black/15 hover:border-black")}>
+                      <h3>
+                        <button type="button" aria-expanded={isOpen} aria-controls={"post-" + i} onClick={() => setOpen(isOpen ? -1 : i)}
+                          className="w-full text-left py-6 grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[160px_minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2 group">
+                          <span className="text-sm text-mute order-2 md:order-none col-span-2 md:col-span-1">{p.read ? p.date + " · " + p.read : p.date}</span>
+                          <span className="font-display text-3xl md:text-5xl text-black leading-none tracking-tight group-hover:italic order-1 md:order-none">{p.title}</span>
+                          <span className={"order-1 md:order-none grid place-items-center h-11 w-11 rounded-full text-xl leading-none transition-all duration-300 " + (isOpen ? "bg-black text-white rotate-45" : "border border-black/20 text-black")} aria-hidden="true">+</span>
+                        </button>
+                      </h3>
+                      <div id={"post-" + i} className="acc" data-open={isOpen} role="region" aria-label={p.title}>
+                        <div>
+                          <p className="pb-7 md:pl-[184px] text-base md:text-lg text-mute leading-relaxed max-w-3xl">{p.text}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </Reveal>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function Footer() {
+    const { t } = useLang();
+    const F = t.footer;
+    return (
+      <footer className="bg-white border-t border-black/10">
+        <div className="gutter">
+          <div className="max-w-7xl mx-auto py-10 flex flex-wrap items-center justify-between gap-x-10 gap-y-5">
+            <Logo />
+            <nav className="flex flex-wrap gap-x-7 gap-y-2" aria-label={t.navLabel}>
+              {NAV_IDS.map((id, i) => <a key={id} href={"#" + id} className="text-sm text-mute hover:text-black transition-colors">{t.nav[i]}</a>)}
+            </nav>
+            <div className="w-full pt-5 border-t border-black/15 flex flex-wrap justify-between gap-x-8 gap-y-3 text-sm text-mute">
+              <span>{F.note}</span>
+              <a href="#home" className="hover:text-black transition-colors">{F.top}</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
+  function initialLang() {
+    try { const v = localStorage.getItem("lumera-lang"); if (v === "en" || v === "ru") return v; } catch (e) {}
+    return (navigator.language || "en").toLowerCase().indexOf("ru") === 0 ? "ru" : "en";
+  }
+
+  function App() {
+    const [lang, setLangState] = React.useState(initialLang);
+    const setLang = (l) => { setLangState(l); try { localStorage.setItem("lumera-lang", l); } catch (e) {} };
+    React.useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+    const ctx = React.useMemo(() => ({ lang, t: T[lang], setLang }), [lang]);
+    const active = useActiveSection();
+    return (
+      <LangCtx.Provider value={ctx}>
+        <Header active={active} />
+        <main>
+          <Hero />
+          <Studio />
+          <About />
+          <Journal />
+        </main>
+        <Footer />
+      </LangCtx.Provider>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
