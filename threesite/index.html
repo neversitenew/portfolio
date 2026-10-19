@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Olea</title>
+<meta name="description" content="Olea is a fictional wood-fire restaurant. Concept landing page with a 3D plate and silver cloche you can rotate and lift, a menu of 37 items in seven sections, story and hours. RU / EN.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@0,400;1,400&display=swap">
+
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { display: ["var(--font-display)"], body: ["Inter", "system-ui", "sans-serif"] },
+        colors: { bg: "#0f1511", panel: "#161e18", ink: "#f0ece2", mute: "#98a094", brass: "#c9a867" }
+      }
+    }
+  };
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+  /* Layout: dark bottle-green page. Hero pairs the headline with a raymarched 3D plate and silver cloche; Menu pins the plate while three dish cards swap what is under the lid. Story and Visit stay quiet.
+     Palette: bottle black-green ground, ivory text, sage grey, one brass accent. Single dark look by choice. */
+  :root { --bg: #0f1511; --panel: #161e18; --ink: #f0ece2; --mute: #98a094; --brass: #c9a867; --line: rgba(240,236,226,0.14); --font-display: 'Instrument Serif', Georgia, serif; color-scheme: dark; }
+  /* Instrument Serif has no Cyrillic, so Russian uses Playfair Display for headings */
+  html[lang="ru"] { --font-display: 'Playfair Display', Georgia, serif; }
+  html[lang="ru"] .font-display { font-feature-settings: "lnum"; }
+  html[lang="ru"] h1.font-display, html[lang="ru"] h2.font-display { line-height: 1.04 !important; letter-spacing: -0.018em !important; }
+  html { scroll-behavior: smooth; background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  section[id], footer[id] { scroll-margin-top: 72px; }
+  .gutter { padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); }
+  :focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; border-radius: 6px; }
+
+  @keyframes fade-rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-fade-rise { animation: fade-rise 0.8s ease-out both; }
+  .animate-fade-rise-delay { animation: fade-rise 0.8s ease-out 0.2s both; }
+  .animate-fade-rise-delay-2 { animation: fade-rise 0.8s ease-out 0.4s both; }
+  .word { display: inline-block; animation: fade-rise 0.9s cubic-bezier(.2,.7,.2,1) both; }
+
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(.2,.7,.2,1), transform 0.9s cubic-bezier(.2,.7,.2,1); }
+  .reveal.is-in { opacity: 1; transform: none; }
+
+  .tilt { position: relative; transition: transform 0.35s cubic-bezier(.2,.7,.2,1), box-shadow 0.35s ease, border-color 0.3s ease, background-color 0.3s ease; will-change: transform; }
+  .tilt::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 0.35s ease;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(201,168,103,0.16), rgba(201,168,103,0) 45%); }
+  .tilt:hover { box-shadow: 0 30px 60px -30px rgba(0,0,0,0.8); }
+  .tilt:hover::after { opacity: 1; }
+
+  .menu-row { transition: padding-left 0.35s cubic-bezier(.2,.7,.2,1); }
+  .menu-row:hover { padding-left: 10px; }
+  .plate-stage { background: radial-gradient(70% 60% at 50% 62%, #243126 0%, #172019 55%, #121912 100%); }
+  .fact-circle { transition: background-color 0.5s ease, color 0.5s ease, transform 0.5s cubic-bezier(.2,.7,.2,1), border-color 0.5s ease; }
+  .fact-circle:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); transform: scale(1.04); }
+  .fact-circle:hover .fact-label { color: rgba(15,21,17,0.7); }
+  @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  .nudge { animation: nudge 2.4s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .animate-fade-rise, .animate-fade-rise-delay, .animate-fade-rise-delay-2, .word, .nudge { animation: none; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .tilt, .fact-circle { transition: none; }
+    .fact-circle:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+  const NAV_IDS = ["home", "menu", "story", "visit"];
+
+  const T = {
+    en: {
+      nav: ["Home", "Menu", "Story", "Visit"], navLabel: "Main", menuBtn: "Menu", close: "Close", cta: "See the menu",
+      hero: { eyebrow: "Seasonal kitchen", h: ["Dinner, served ", "under glass."], p: "Seasonal plates from a small kitchen. Lift the lid and see.", drag: "Drag to rotate", lift: "Lift the lid", cover: "Cover", aria: "3D plate with a silver cloche. Drag to rotate." },
+      menu: { eyebrow: "Menu", h: ["A menu for ", "every day."], p: "Seven sections, from starters to cold drinks. Pick a section and the dish appears under the lid.", drag: "Drag to rotate", items: "items" },
+      story: { eyebrow: "Story",
+        manifesto: "Olea opened in 2026 in the Old Town. Seasonal produce, an open kitchen and plates served the way a gift is given.",
+        facts: [["2026", "year we opened"], ["40", "seats in the hall"], ["37", "items on the menu"], ["7", "days a week"]] },
+      visit: { eyebrow: "Visit", h: ["No reservations. ", "Just come."], p: "Walk in, sit down and let the kitchen set the pace.",
+        hours: [["Monday to Thursday", "12:00 to 23:00"], ["Friday and Saturday", "12:00 to 01:00"], ["Sunday", "12:00 to 22:00"]],
+        place: "Old Town, ground floor, behind the green door." },
+      footer: { note: "© 2026 Olea. A fictional restaurant, concept page for a portfolio.", top: "Back to top ↑" }
+    },
+    ru: {
+      nav: ["Главная", "Меню", "История", "Визит"], navLabel: "Основное меню", menuBtn: "Меню", close: "Закрыть", cta: "Смотреть меню",
+      hero: { eyebrow: "Сезонная кухня", h: ["Ужин, поданный ", "под клошем."], p: "Сезонные блюда из маленькой кухни. Поднимите крышку и посмотрите.", drag: "Потяните, чтобы повернуть", lift: "Поднять крышку", cover: "Накрыть", aria: "3D-тарелка с серебряным клошем. Потяните, чтобы повернуть." },
+      menu: { eyebrow: "Меню", h: ["Меню на ", "каждый день."], p: "Семь разделов, от закусок до холодных напитков. Выберите раздел, и блюдо появится под крышкой.", drag: "Потяните, чтобы повернуть", items: "позиций" },
+      story: { eyebrow: "История",
+        manifesto: "Olea открылась в 2026 году в Старом городе. Сезонные продукты, открытая кухня и блюда, которые подают так, как дарят подарок.",
+        facts: [["2026", "год открытия"], ["40", "мест в зале"], ["37", "позиций в меню"], ["7", "дней в неделю"]] },
+      visit: { eyebrow: "Визит", h: ["Без бронирования. ", "Просто приходите."], p: "Заходите, садитесь и доверьте темп кухне.",
+        hours: [["Понедельник — четверг", "12:00–23:00"], ["Пятница и суббота", "12:00–01:00"], ["Воскресенье", "12:00–22:00"]],
+        place: "Старый город, первый этаж, за зелёной дверью." },
+      footer: { note: "© 2026 Olea. Вымышленный ресторан, концепт-страница для портфолио.", top: "Наверх ↑" }
+    }
+  };
+
+  const LangCtx = React.createContext({ lang: "en", t: T.en, setLang: () => {} });
+  const useLang = () => React.useContext(LangCtx);
+
+  const PLATE_FRAG = `precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+uniform vec2 uRot;    // yaw, pitch
+uniform float uLift;  // 0 closed .. 1 lifted
+uniform float uDish;  // 0 salad, 1 soup, 2 steak, 3 cheesecake, 4 coffee, 5 lemonade
+
+const float PI = 3.14159265;
+
+vec2 U(vec2 a, vec2 b){ return a.x < b.x ? a : b; }
+float smin(float a, float b, float k){ float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0); return mix(b, a, h) - k * h * (1.0 - h); }
+mat2 rot(float a){ float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
+float sdEll(vec3 p, vec3 r){ float k0 = length(p / r); float k1 = length(p / (r * r)); return k0 * (k0 - 1.0) / k1; }
+float sdRoundCyl(vec3 p, float r, float h, float rr){ vec2 d = vec2(length(p.xz) - r + rr, abs(p.y) - h + rr); return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - rr; }
+float sdTorus(vec3 p, vec2 t){ vec2 q = vec2(length(p.xz) - t.x, p.y); return length(q) - t.y; }
+float sdBox(vec3 p, vec3 b){ vec3 q = abs(p) - b; return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0); }
+float sdCapsule(vec3 p, vec3 a, vec3 b, float r){ vec3 pa = p - a, ba = b - a; float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0); return length(pa - ba * h) - r; }
+float hash(float n){ return fract(sin(n * 12.9898) * 43758.5453); }
+
+// curved leaf: flattened ellipsoid, yaw a, pitch tilt, cupped
+float leaf(vec3 p, vec3 pos, float a, float tilt, vec3 r, float cup){
+  vec3 q = p - pos;
+  q.xz = rot(a) * q.xz;
+  q.xy = rot(tilt) * q.xy;
+  q.y -= cup * (q.x * q.x + 0.6 * q.z * q.z);
+  q.y += 0.004 * sin(q.x * 38.0 + q.z * 9.0);
+  return sdEll(q, r) * 0.8;
+}
+
+vec2 plate(vec3 p){
+  float base = sdRoundCyl(p - vec3(0.0, 0.03, 0.0), 1.55, 0.03, 0.025);
+  float rim = sdTorus(p - vec3(0.0, 0.07, 0.0), vec2(1.43, 0.045));
+  return vec2(smin(base, rim, 0.05), 1.0);
+}
+
+vec2 cloche(vec3 p){
+  float L = uLift;
+  vec3 q = p - vec3(0.0, 0.06, 0.0);
+  q -= vec3(L * 1.35, L * 1.6, 0.0);
+  q.xy = rot(L * 0.5) * q.xy;
+  float e = sdEll(q, vec3(1.2, 1.0, 1.2));
+  float shell = max(abs(e) - 0.016, -q.y);
+  float rimR = sdTorus(q - vec3(0.0, 0.012, 0.0), vec2(1.19, 0.026));
+  float knob = length(q - vec3(0.0, 1.04, 0.0)) - 0.095;
+  float neck = sdRoundCyl(q - vec3(0.0, 0.99, 0.0), 0.04, 0.05, 0.012);
+  float d = smin(shell, rimR, 0.025);
+  d = smin(d, smin(knob, neck, 0.04), 0.05);
+  return vec2(d, 2.0);
+}
+
+/* ---------- 0: garden salad ---------- */
+vec2 salad(vec3 p){
+  vec2 res = vec2(1e3, 0.0);
+  for (int i = 0; i < 11; i++){
+    float fi = float(i);
+    float a = fi * 2.39996 + 0.3;
+    float r = 0.06 + 0.062 * fi;
+    vec3 pos = vec3(cos(a) * r, 0.36 - r * 0.38 + 0.03 * hash(fi), sin(a) * r);
+    float l = leaf(p, pos, a, -0.2 - r * 0.7, vec3(0.27, 0.022, 0.16), 1.1);
+    res = U(res, vec2(l, mod(fi, 2.0) < 0.5 ? 5.0 : 11.0));
+  }
+  float tom = 1e3;
+  for (int i = 0; i < 4; i++){
+    float a = float(i) * 1.5708 + 0.4;
+    vec3 c = vec3(cos(a) * 0.5, 0.2, sin(a) * 0.5);
+    vec3 q = p - c; q.xy = rot(0.5) * q.xy;
+    tom = min(tom, max(length(q) - 0.11, -q.y));
+  }
+  res = U(res, vec2(tom, 10.0));
+  float ch = 1e3;
+  for (int i = 0; i < 4; i++){
+    float a = float(i) * 1.5708 + 1.2;
+    vec3 q = p - vec3(cos(a) * 0.32, 0.3, sin(a) * 0.32);
+    q.xz = rot(a * 1.7) * q.xz;
+    ch = min(ch, sdBox(q, vec3(0.045)) - 0.012);
+  }
+  res = U(res, vec2(ch, 3.0));
+  float cr = 1e3;
+  for (int i = 0; i < 3; i++){
+    float a = float(i) * 2.0944 + 2.1;
+    vec3 q = p - vec3(cos(a) * 0.62, 0.11, sin(a) * 0.62);
+    q.xz = rot(a) * q.xz; q.xy = rot(0.3) * q.xy;
+    cr = min(cr, sdBox(q, vec3(0.05, 0.045, 0.05)) - 0.015);
+  }
+  res = U(res, vec2(cr, 12.0));
+  return res;
+}
+
+/* ---------- 1: pumpkin soup in a glazed bowl ---------- */
+vec2 soup(vec3 p){
+  vec3 c = vec3(0.0, 0.62, 0.0);
+  float outer = sdEll(p - c, vec3(0.86, 0.62, 0.86));
+  float bowl = max(abs(outer) - 0.03, p.y - 0.48);
+  bowl = smin(bowl, sdRoundCyl(p - vec3(0.0, 0.03, 0.0), 0.36, 0.03, 0.012), 0.03);
+  vec2 res = vec2(bowl, 14.0);
+  float fill = max(sdEll(p - c, vec3(0.82, 0.58, 0.82)), p.y - 0.41);
+  res = U(res, vec2(fill, 13.0));
+  // cream swirl
+  vec3 s = p - vec3(0.05, 0.41, -0.02);
+  float ang = atan(s.z, s.x);
+  float rr = length(s.xz);
+  float sp = abs(fract((rr - 0.04 * ang) / 0.25 + 0.5) - 0.5) * 0.25;
+  float swirl = max(sqrt(sp * sp + s.y * s.y) - 0.022, rr - 0.45);
+  res = U(res, vec2(swirl * 0.8, 3.0));
+  float seeds = 1e3;
+  for (int i = 0; i < 6; i++){
+    float a = float(i) * 1.047 + 0.5;
+    vec3 q = p - vec3(cos(a) * 0.55, 0.42, sin(a) * 0.55);
+    q.xz = rot(a * 2.3) * q.xz;
+    seeds = min(seeds, sdEll(q, vec3(0.05, 0.016, 0.028)));
+  }
+  res = U(res, vec2(seeds, 11.0));
+  float cr = 1e3;
+  for (int i = 0; i < 3; i++){
+    float a = float(i) * 2.1 + 1.0;
+    vec3 q = p - vec3(cos(a) * 0.3, 0.44, sin(a) * 0.3);
+    q.xz = rot(a) * q.xz;
+    cr = min(cr, sdBox(q, vec3(0.045)) - 0.012);
+  }
+  res = U(res, vec2(cr, 12.0));
+  float herb = leaf(p, vec3(-0.25, 0.43, 0.12), 0.8, 0.0, vec3(0.1, 0.012, 0.06), 0.8);
+  herb = min(herb, leaf(p, vec3(-0.15, 0.43, 0.22), -0.6, 0.0, vec3(0.09, 0.012, 0.055), 0.8));
+  res = U(res, vec2(herb, 5.0));
+  // bread on the side
+  vec3 b = p - vec3(0.98, 0.08, -0.35); b.xz = rot(0.9) * b.xz;
+  res = U(res, vec2(sdEll(b, vec3(0.3, 0.09, 0.14)), 12.0));
+  return res;
+}
+
+/* ---------- 2: sliced steak ---------- */
+vec4 steakInfo(vec3 p){
+  float best = 1e3; vec3 bl = vec3(0.0);
+  for (int i = 0; i < 5; i++){
+    float fi = float(i);
+    vec3 lc = p - vec3(0.12, 0.0, 0.18);
+    lc.xz = rot(0.55) * lc.xz;
+    lc.x -= -0.38 + 0.19 * fi;
+    lc.xy = rot(0.3) * lc.xy;
+    lc.y -= 0.13;
+    float d = sdBox(lc, vec3(0.045, 0.1, 0.31)) - 0.03;
+    if (d < best){ best = d; bl = lc; }
+  }
+  return vec4(best, bl);
+}
+vec2 steak(vec3 p){
+  vec2 res = vec2(steakInfo(p).x, 15.0);
+  vec3 m = p - vec3(-0.42, 0.12, -0.45); m.xz = rot(0.7) * m.xz;
+  float mash = sdEll(m, vec3(0.3, 0.15, 0.17));
+  mash += 0.008 * sin(m.x * 30.0) * sin(m.z * 26.0);
+  res = U(res, vec2(mash, 16.0));
+  float jus = sdRoundCyl(p - vec3(0.15, 0.006, 0.12), 0.72 + 0.06 * sin(atan(p.z - 0.12, p.x - 0.15) * 3.0), 0.01, 0.007);
+  res = U(res, vec2(jus, 17.0));
+  float tom = 1e3;
+  tom = min(tom, length(p - vec3(0.62, 0.1, -0.5)) - 0.1);
+  tom = min(tom, length(p - vec3(0.78, 0.1, -0.3)) - 0.095);
+  tom = min(tom, length(p - vec3(0.45, 0.1, -0.68)) - 0.09);
+  res = U(res, vec2(tom, 10.0));
+  float stem = sdCapsule(p, vec3(0.45, 0.2, -0.68), vec3(0.78, 0.2, -0.3), 0.012);
+  float r1 = leaf(p, vec3(0.05, 0.36, 0.15), 0.4, 0.2, vec3(0.16, 0.012, 0.03), 0.0);
+  float r2 = leaf(p, vec3(0.12, 0.37, 0.05), 1.2, 0.25, vec3(0.14, 0.012, 0.028), 0.0);
+  res = U(res, vec2(min(stem, min(r1, r2)), 5.0));
+  return res;
+}
+
+/* ---------- 3: cheesecake slice ---------- */
+vec2 cake(vec3 p){
+  vec3 l = p - vec3(-0.6, 0.0, 0.0);
+  l.xz = rot(-0.2) * l.xz;
+  float cyl = sdRoundCyl(l - vec3(0.0, 0.25, 0.0), 1.0, 0.25, 0.03);
+  float h = 0.36;
+  float wedge = max(dot(l.xz, vec2(-sin(h), cos(h))), dot(l.xz, vec2(-sin(h), -cos(h))));
+  float d = max(cyl, wedge);
+  d = max(d, 0.08 - l.x);
+  vec2 res = vec2(d, 18.0);
+  float ber = 1e3;
+  for (int i = 0; i < 5; i++){
+    float fi = float(i);
+    vec3 c = vec3(0.35 + 0.12 * fi, 0.55, (hash(fi + 3.0) - 0.5) * 0.12 * fi * 0.5);
+    vec3 lc = l - c;
+    ber = min(ber, length(lc) - 0.06);
+  }
+  res = U(res, vec2(ber, 19.0));
+  vec3 rp = l - vec3(0.62, 0.58, 0.06);
+  float rasp = length(rp) - 0.075 + 0.008 * sin(rp.x * 60.0) * sin(rp.y * 60.0) * sin(rp.z * 60.0);
+  res = U(res, vec2(rasp, 10.0));
+  float mt = leaf(p, vec3(0.0, 0.58, -0.12), 1.1, 0.4, vec3(0.13, 0.014, 0.075), 0.9);
+  res = U(res, vec2(mt, 5.0));
+  vec3 sw = p - vec3(0.15, 0.004, 0.72); sw.xz = rot(0.35) * sw.xz;
+  float swoosh = sdEll(sw, vec3(0.5, 0.014, 0.065));
+  float dots = 1e3;
+  for (int i = 0; i < 3; i++){ dots = min(dots, length(p - vec3(-0.62 + 0.15 * float(i), 0.02, 0.55 + 0.06 * float(i))) - 0.035); }
+  res = U(res, vec2(min(swoosh, dots), 10.0));
+  return res;
+}
+
+/* ---------- 4: cappuccino ---------- */
+vec2 coffee(vec3 p){
+  float saucer = sdRoundCyl(p - vec3(0.0, 0.025, 0.0), 0.68, 0.025, 0.02);
+  saucer = smin(saucer, sdTorus(p - vec3(0.0, 0.05, 0.0), vec2(0.62, 0.025)), 0.03);
+  vec2 res = vec2(saucer, 1.0);
+  float y = p.y;
+  float r = 0.3 + 0.13 * clamp((y - 0.07) / 0.45, 0.0, 1.0);
+  float outer = max(length(p.xz) - r, abs(y - 0.3) - 0.23);
+  float inner = max(length(p.xz) - (r - 0.03), abs(y - 0.36) - 0.23);
+  float cup = max(outer, -inner);
+  vec3 hq = p - vec3(0.43, 0.32, 0.0);
+  float handle = max(sdTorus(vec3(hq.x, hq.z, hq.y), vec2(0.1, 0.026)), -(length(p.xz) - r + 0.01));
+  cup = smin(cup, handle, 0.02);
+  res = U(res, vec2(cup * 0.9, 14.0));
+  float fill = max(length(p.xz) - (r - 0.025), max(y - 0.47, 0.12 - y));
+  res = U(res, vec2(fill, 20.0));
+  vec3 bq = p - vec3(-0.15, 0.08, 0.55); bq.xz = rot(-0.4) * bq.xz;
+  float bis = sdBox(bq, vec3(0.22, 0.025, 0.06)) - 0.02;
+  res = U(res, vec2(bis, 12.0));
+  return res;
+}
+
+/* ---------- 5: lemonade ---------- */
+vec2 lemonade(vec3 p){
+  float rl = length(p.xz);
+  float base = sdRoundCyl(p - vec3(0.0, 0.035, 0.0), 0.33, 0.035, 0.012);
+  float rim = max(abs(rl - 0.32) - 0.012, abs(p.y - 0.665) - 0.055);
+  vec2 res = vec2(min(base, rim), 21.0);
+  float liq = sdRoundCyl(p - vec3(0.0, 0.34, 0.0), 0.33, 0.27, 0.02);
+  res = U(res, vec2(liq, 22.0));
+  float ice = 1e3;
+  for (int i = 0; i < 3; i++){
+    float fi = float(i);
+    float a = fi * 2.1 + 0.3;
+    vec3 q = p - vec3(cos(a) * 0.14, 0.62 + 0.02 * fi, sin(a) * 0.14);
+    q.xz = rot(a * 1.3) * q.xz; q.xy = rot(0.3 + fi) * q.xy;
+    ice = min(ice, sdBox(q, vec3(0.075)) - 0.02);
+  }
+  res = U(res, vec2(ice, 23.0));
+  vec3 lw = p - vec3(0.33, 0.68, 0.06);
+  lw.xz = rot(0.2) * lw.xz;
+  float wheel = sdRoundCyl(vec3(lw.y, lw.x, lw.z), 0.15, 0.022, 0.01);
+  res = U(res, vec2(wheel, 24.0));
+  float straw = sdCapsule(p, vec3(-0.06, 0.2, 0.04), vec3(-0.2, 0.86, 0.13), 0.022);
+  res = U(res, vec2(straw, 25.0));
+  float mint = leaf(p, vec3(-0.08, 0.7, -0.1), 0.5, 0.5, vec3(0.1, 0.012, 0.06), 0.9);
+  mint = min(mint, leaf(p, vec3(0.02, 0.71, -0.14), -0.8, -0.4, vec3(0.09, 0.012, 0.055), 0.9));
+  res = U(res, vec2(mint, 5.0));
+  // lemon halves on the plate
+  vec3 lh = p - vec3(0.75, 0.0, -0.45);
+  float half1 = max(length(lh) - 0.2, -lh.y);
+  half1 = max(half1, lh.y - 0.16);
+  res = U(res, vec2(half1, 24.0));
+  return res;
+}
+
+vec2 dishAt(vec3 q){
+  if (uDish < 0.5) return salad(q);
+  if (uDish < 1.5) return soup(q);
+  if (uDish < 2.5) return steak(q);
+  if (uDish < 3.5) return cake(q);
+  if (uDish < 4.5) return coffee(q);
+  return lemonade(q);
+}
+
+vec2 map(vec3 p){
+  vec2 res = plate(p);
+  res = U(res, cloche(p));
+  vec3 q = p - vec3(0.0, 0.06, 0.0);
+  if (length(q) < 1.7){
+    vec2 d = dishAt(q);
+    // everything stays inside the closed lid; the clip opens up as the lid lifts
+    d.x = max(d.x, sdEll(q, vec3(1.13, 0.93, 1.13)) - uLift * 30.0);
+    res = U(res, d);
+  }
+  return res;
+}
+
+vec3 normalAt(vec3 p){
+  vec2 e = vec2(1.0, -1.0) * 0.0011;
+  return normalize(e.xyy * map(p + e.xyy).x + e.yyx * map(p + e.yyx).x + e.yxy * map(p + e.yxy).x + e.xxx * map(p + e.xxx).x);
+}
+
+float shadow(vec3 ro, vec3 rd){
+  float res = 1.0, t = 0.03;
+  for (int i = 0; i < 28; i++){
+    float h = map(ro + rd * t).x;
+    res = min(res, 9.0 * h / t);
+    t += clamp(h, 0.02, 0.25);
+    if (res < 0.02 || t > 5.0) break;
+  }
+  return clamp(res, 0.0, 1.0);
+}
+float aoAt(vec3 p, vec3 n){
+  float o = 0.0, s = 1.0;
+  for (int i = 1; i <= 5; i++){ float h = 0.035 * float(i); o += (h - map(p + n * h).x) * s; s *= 0.72; }
+  return clamp(1.0 - 2.4 * o, 0.0, 1.0);
+}
+
+mat3 rotY(float a){ float c = cos(a), s = sin(a); return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c); }
+mat3 rotX(float a){ float c = cos(a), s = sin(a); return mat3(1.0, 0.0, 0.0, 0.0, c, s, 0.0, -s, c); }
+
+vec3 envMap(vec3 d){
+  vec3 col = mix(vec3(0.045, 0.06, 0.05), vec3(0.34, 0.38, 0.35), smoothstep(-0.25, 0.95, d.y));
+  float box = smoothstep(0.5, 0.18, length(vec2(d.x + 0.5, d.y - 0.62) * vec2(1.0, 1.15))) * smoothstep(-0.4, 0.2, d.z);
+  col += vec3(1.0, 0.95, 0.86) * 3.2 * box;
+  float strip = smoothstep(0.09, 0.0, abs(d.x - 0.82)) * smoothstep(0.95, 0.25, abs(d.y - 0.1)) * step(-0.2, d.z);
+  col += vec3(0.85, 0.93, 1.0) * 1.8 * strip;
+  float back = smoothstep(0.14, 0.0, abs(d.x + 0.9)) * smoothstep(0.7, 0.1, abs(d.y)) * 0.6;
+  col += vec3(1.0, 0.85, 0.6) * back;
+  col = mix(col, vec3(0.11, 0.08, 0.05), smoothstep(0.0, -0.45, d.y) * 0.85);
+  return col;
+}
+
+float dot2(vec2 v){ return dot(v, v); }
+float sdHeart(vec2 p){
+  p.x = abs(p.x);
+  if (p.y + p.x > 1.0) return sqrt(dot2(p - vec2(0.25, 0.75))) - sqrt(2.0) / 4.0;
+  return sqrt(min(dot2(p - vec2(0.0, 1.0)), dot2(p - 0.5 * max(p.x + p.y, 0.0)))) * sign(p.x - p.y);
+}
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / min(uRes.x, uRes.y * 0.95);
+  vec3 ro = vec3(0.0, 0.0, 7.6);
+  vec3 rd = normalize(vec3(uv, -1.7));
+  mat3 R = rotY(uRot.x) * rotX(-uRot.y);
+  vec3 target = vec3(0.6, 1.0, 0.0);
+  ro = R * ro; rd = R * rd; ro += target;
+
+  vec3 L1 = normalize(R * vec3(-0.55, 0.9, 0.7));
+  vec3 L2 = normalize(R * vec3(0.8, 0.35, 0.3));
+
+  vec3 oc = ro - vec3(0.4, 0.9, 0.0);
+  float b = dot(oc, rd), c = dot(oc, oc) - 3.6 * 3.6, hh = b * b - c;
+  float t = 0.0, d = 1.0; bool hit = false;
+  if (hh > 0.0){
+    t = max(0.0, -b - sqrt(hh));
+    for (int i = 0; i < 140; i++){
+      d = map(ro + rd * t).x;
+      if (d < 0.0007 * (1.0 + t * 0.15)){ hit = true; break; }
+      if (t > 14.0) break;
+      t += d * 0.8;
+    }
+  }
+
+  if (!hit){
+    float alpha = 0.0;
+    if (rd.y < -0.001){
+      float tf = -ro.y / rd.y;
+      if (tf > 0.0){
+        vec3 fp = ro + rd * tf;
+        float sh = shadow(fp + vec3(0.0, 0.03, 0.0), L1);
+        float rr = length(fp.xz);
+        float ao = exp(-max(rr - 1.5, 0.0) * 2.4) * 0.55;
+        alpha = clamp((1.0 - sh) * 0.55 * smoothstep(5.0, 1.5, rr) + ao * smoothstep(3.2, 1.6, rr), 0.0, 0.85);
+      }
+    }
+    vec2 sc = gl_FragCoord.xy / uRes;
+    alpha *= smoothstep(0.0, 0.14, min(min(sc.x, 1.0 - sc.x), min(sc.y, 1.0 - sc.y)));
+    gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
+    return;
+  }
+
+  vec3 p = ro + rd * t;
+  vec3 n = normalAt(p);
+  vec3 v = -rd;
+  vec2 m = map(p);
+  float id = m.y;
+
+  vec3 alb = vec3(0.9); float shin = 60.0; float refl = 0.1; float metal = 0.0; float sss = 0.0; vec3 tint = vec3(1.0);
+  vec3 q = p - vec3(0.0, 0.06, 0.0);
+  if (id < 1.5){
+    alb = vec3(0.93, 0.93, 0.9); shin = 90.0; refl = 0.16;
+    float rr = length(p.xz);
+    float band = smoothstep(0.012, 0.0, abs(rr - 1.12)) * step(0.05, p.y);
+    alb = mix(alb, vec3(0.78, 0.6, 0.28), band);
+    float band2 = smoothstep(0.006, 0.0, abs(rr - 1.18)) * step(0.05, p.y);
+    alb = mix(alb, vec3(0.78, 0.6, 0.28), band2 * 0.8);
+  } else if (id < 2.5){
+    alb = vec3(0.78, 0.8, 0.83); shin = 160.0; refl = 1.0; metal = 1.0; tint = vec3(0.92, 0.95, 0.98);
+  } else if (id < 3.5){            // cheese / cream
+    alb = vec3(0.97, 0.95, 0.88); shin = 40.0; refl = 0.08; sss = 0.35;
+  } else if (id < 5.5){            // dark herb
+    alb = vec3(0.08, 0.27, 0.07); shin = 50.0; refl = 0.12; sss = 0.15;
+  } else if (id < 10.5){           // red: tomato, raspberry, sauce
+    alb = vec3(0.68, 0.06, 0.05); shin = 130.0; refl = 0.38; sss = 0.1;
+  } else if (id < 11.5){           // light leaf / pumpkin seeds
+    alb = vec3(0.32, 0.55, 0.16); shin = 50.0; refl = 0.12; sss = 0.2;
+  } else if (id < 12.5){           // toasted bread
+    float k = 0.5 + 0.5 * sin(q.x * 31.0) * sin(q.z * 27.0 + q.y * 13.0);
+    alb = mix(vec3(0.62, 0.37, 0.14), vec3(0.8, 0.56, 0.26), k); shin = 18.0; refl = 0.03;
+  } else if (id < 13.5){           // pumpkin soup
+    alb = vec3(0.92, 0.48, 0.1); shin = 90.0; refl = 0.22; sss = 0.3;
+  } else if (id < 14.5){           // dark green glaze
+    alb = vec3(0.07, 0.13, 0.1); shin = 150.0; refl = 0.6;
+  } else if (id < 15.5){           // steak: seared crust, pink core on the cut faces
+    vec4 si = steakInfo(q);
+    vec3 lc = si.yzw;
+    float inner = min(0.13 - abs(lc.y), 0.34 - abs(lc.z));
+    float core = smoothstep(0.012, 0.05, inner);
+    vec3 crust = vec3(0.2, 0.09, 0.045);
+    vec3 grey = vec3(0.48, 0.28, 0.2);
+    vec3 pink = vec3(0.78, 0.3, 0.3);
+    alb = mix(crust, mix(grey, pink, smoothstep(0.035, 0.07, inner)), core);
+    shin = mix(60.0, 35.0, core); refl = mix(0.25, 0.08, core); sss = 0.12 * core;
+  } else if (id < 16.5){           // mash
+    alb = vec3(0.96, 0.88, 0.62); shin = 40.0; refl = 0.08; sss = 0.25;
+  } else if (id < 17.5){           // jus
+    alb = vec3(0.17, 0.07, 0.03); shin = 180.0; refl = 0.6;
+  } else if (id < 18.5){           // cheesecake layers
+    vec3 l = q - vec3(-0.5, 0.0, -0.18);
+    float y = q.y;
+    vec3 cream = vec3(0.98, 0.93, 0.8);
+    alb = cream; shin = 35.0; refl = 0.07; sss = 0.3;
+    if (y < 0.085){ float k = 0.5 + 0.5 * sin(q.x * 70.0) * sin(q.z * 64.0); alb = mix(vec3(0.55, 0.32, 0.13), vec3(0.72, 0.47, 0.2), k); sss = 0.0; shin = 15.0; refl = 0.02; }
+    if (y > 0.445){ alb = vec3(0.6, 0.04, 0.07); shin = 170.0; refl = 0.45; sss = 0.1; }
+  } else if (id < 19.5){           // blueberries
+    alb = vec3(0.1, 0.11, 0.26); shin = 60.0; refl = 0.2;
+  } else if (id < 20.5){           // cappuccino with latte art
+    vec2 hp = vec2(q.x - 0.04, -q.z + 0.02) / 0.24 + vec2(0.0, 0.45);
+    float hd = sdHeart(hp);
+    float ring = abs(length(q.xz) - 0.31);
+    vec3 crema = vec3(0.5, 0.3, 0.14);
+    vec3 milk = vec3(0.96, 0.9, 0.8);
+    alb = mix(crema, milk, smoothstep(0.03, -0.03, hd));
+    alb = mix(alb, vec3(0.7, 0.5, 0.3), smoothstep(0.06, 0.0, ring) * 0.6);
+    shin = 70.0; refl = 0.15; sss = 0.1;
+  } else if (id < 21.5){           // glass
+    alb = vec3(0.75, 0.86, 0.84); shin = 220.0; refl = 0.9;
+  } else if (id < 22.5){           // lemonade seen through the glass
+    float f = pow(1.0 - max(dot(n, v), 0.0), 2.0);
+    alb = mix(vec3(1.0, 0.78, 0.25), vec3(0.95, 0.55, 0.1), f);
+    shin = 220.0; refl = 0.55; sss = 0.7;
+  } else if (id < 23.5){           // ice
+    alb = vec3(0.86, 0.94, 0.98); shin = 200.0; refl = 0.6; sss = 0.45;
+  } else if (id < 24.5){           // lemon
+    vec3 lc = q - vec3(0.33, 0.68, 0.06);
+    lc.xz = rot(0.2) * lc.xz;
+    vec2 face = vec2(lc.y, lc.z);
+    if (abs(n.y) > 0.7 && q.y < 0.3){ face = (q - vec3(0.75, 0.16, -0.45)).xz; }
+    float r = length(face);
+    float a = atan(face.y, face.x);
+    float seg = abs(fract(a * 8.0 / (2.0 * PI)) - 0.5);
+    float flat_ = max(abs(n.x * 0.97 + n.y * 0.0), abs(n.y));
+    vec3 pulp = mix(vec3(0.98, 0.84, 0.3), vec3(1.0, 0.95, 0.75), smoothstep(0.42, 0.5, seg));
+    float rimR = (q.y < 0.3) ? 0.18 : 0.13;
+    vec3 face_ = mix(pulp, vec3(1.0, 0.97, 0.88), smoothstep(rimR - 0.025, rimR - 0.01, r));
+    face_ = mix(face_, vec3(0.97, 0.78, 0.08), smoothstep(rimR - 0.01, rimR, r));
+    alb = face_; shin = 110.0; refl = 0.2; sss = 0.4;
+  } else {                         // straw
+    float st = step(0.5, fract((q.y + q.x * 0.2) * 9.0));
+    alb = mix(vec3(0.95, 0.94, 0.9), vec3(0.78, 0.6, 0.28), st); shin = 80.0; refl = 0.1;
+  }
+
+  float sh = shadow(p + n * 0.012, L1);
+  float occ = aoAt(p, n);
+  float wrap1 = clamp((dot(n, L1) + 0.25) / 1.25, 0.0, 1.0) * mix(0.25, 1.0, sh);
+  float wrap2 = clamp((dot(n, L2) + 0.5) / 1.5, 0.0, 1.0);
+  float diffK = 1.0 - metal * 0.92;
+  vec3 col = alb * (0.16 + 1.0 * wrap1 + 0.28 * wrap2) * diffK * mix(vec3(1.0), vec3(1.0, 0.97, 0.92), 0.5);
+  col += alb * vec3(1.0, 0.8, 0.55) * sss * pow(clamp(dot(v, -L1) + 0.3, 0.0, 1.0), 2.0) * 0.6;
+  vec3 h1 = normalize(L1 + v);
+  float sp = pow(max(dot(n, h1), 0.0), shin) * sh;
+  float sp2 = pow(max(dot(n, normalize(L2 + v)), 0.0), shin * 0.7);
+  col += vec3(1.0, 0.97, 0.92) * (sp * (0.7 + 1.6 * refl) + sp2 * 0.25 * (0.5 + refl));
+  float fres = pow(1.0 - max(dot(n, v), 0.0), 4.0);
+  vec3 rdir = reflect(rd, n);
+  vec3 rc = rdir * R;
+  vec3 env = envMap(rc);
+  float rK = refl * (metal > 0.5 ? 1.0 : (0.35 + 0.65 * fres));
+  vec3 spec = env * mix(vec3(1.0), alb * tint, metal);
+  col = mix(col, spec, clamp(rK, 0.0, 1.0)) + env * fres * 0.06 * (1.0 - metal);
+  col *= mix(0.5, 1.0, occ);
+  if (id > 1.5 && id < 2.5 && dot(n, normalize(vec3(0.0, 0.2, 0.0) + (p - vec3(0.0, 0.9, 0.0)) * -1.0)) > 0.0) col *= 0.75;
+
+  col = col / (1.0 + col * 0.25);
+  col = pow(col, vec3(0.88));
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+  /* Menu: [ru name, ru text, en name, en text, price ₸]. model = which 3D dish sits under the lid. */
+  const MENU = [
+    { id: "starters", ru: "Закуски", en: "Starters", model: 0, items: [
+      ["Брускетта с томатами", "Хлеб с огня, томаты, базилик, оливковое масло", "Tomato bruschetta", "Grilled bread, tomatoes, basil, olive oil", 2400],
+      ["Хумус с нутом", "Тахини, паприка, тёплая лепёшка", "Hummus", "Tahini, paprika, warm flatbread", 2600],
+      ["Сырная тарелка", "Три сыра, мёд, грецкий орех, груша", "Cheese board", "Three cheeses, honey, walnuts, pear", 5200],
+      ["Оливки и маринады", "Оливки, артишоки, вяленые томаты", "Olives and pickles", "Olives, artichokes, sun-dried tomatoes", 2200],
+      ["Карпаччо из говядины", "Руккола, пармезан, каперсы", "Beef carpaccio", "Rocket, parmesan, capers", 4600]
+    ] },
+    { id: "salads", ru: "Салаты", en: "Salads", model: 0, items: [
+      ["Садовый салат", "Листья, томаты черри, фета, гренки", "Garden salad", "Leaves, cherry tomatoes, feta, croutons", 3200],
+      ["Цезарь с курицей", "Ромэн, курица гриль, пармезан, соус цезарь", "Chicken Caesar", "Romaine, grilled chicken, parmesan, Caesar dressing", 3900],
+      ["Греческий", "Огурцы, томаты, перец, оливки, фета", "Greek salad", "Cucumber, tomato, pepper, olives, feta", 3400],
+      ["Тёплый салат с говядиной", "Говядина, печёные овощи, кунжут", "Warm beef salad", "Beef, roasted vegetables, sesame", 4800],
+      ["Свёкла и козий сыр", "Печёная свёкла, козий сыр, орехи", "Beetroot and goat cheese", "Roasted beetroot, goat cheese, nuts", 3600]
+    ] },
+    { id: "soups", ru: "Супы", en: "Soups", model: 1, items: [
+      ["Тыквенный крем-суп", "Сливки, тыквенные семечки, гренки", "Pumpkin soup", "Cream, pumpkin seeds, croutons", 2800],
+      ["Томатный суп", "Печёные томаты, базилик, моцарелла", "Tomato soup", "Roasted tomatoes, basil, mozzarella", 2700],
+      ["Грибной суп", "Белые грибы, сливки, трюфельное масло", "Mushroom soup", "Porcini, cream, truffle oil", 3300],
+      ["Куриный бульон", "Домашняя лапша, зелень", "Chicken broth", "Homemade noodles, herbs", 2500]
+    ] },
+    { id: "mains", ru: "Горячее", en: "Mains", model: 2, items: [
+      ["Стейк рибай", "300 г, картофельное пюре, соус демиглас", "Ribeye steak", "300 g, mashed potatoes, demi-glace", 12500],
+      ["Утиная грудка", "Вишнёвый соус, печёная груша", "Duck breast", "Cherry sauce, roasted pear", 8900],
+      ["Лосось на гриле", "Спаржа, лимонное масло", "Grilled salmon", "Asparagus, lemon butter", 9400],
+      ["Каре ягнёнка", "Розмарин, печёный картофель", "Rack of lamb", "Rosemary, roasted potatoes", 11800],
+      ["Паста с морепродуктами", "Креветки, мидии, томаты, чеснок", "Seafood pasta", "Prawns, mussels, tomatoes, garlic", 7600],
+      ["Ризотто с грибами", "Белые грибы, пармезан", "Mushroom risotto", "Porcini, parmesan", 5900]
+    ] },
+    { id: "desserts", ru: "Десерты", en: "Desserts", model: 3, items: [
+      ["Чизкейк с ягодами", "Сливочный сыр, ягодный соус, черника", "Berry cheesecake", "Cream cheese, berry sauce, blueberries", 2900],
+      ["Тирамису", "Маскарпоне, кофе, какао", "Tiramisu", "Mascarpone, coffee, cocoa", 2800],
+      ["Шоколадный фондан", "Тёплый, с шариком ванильного мороженого", "Chocolate fondant", "Warm, with vanilla ice cream", 3200],
+      ["Панна-котта", "Ваниль, малиновый соус", "Panna cotta", "Vanilla, raspberry sauce", 2400],
+      ["Мороженое", "Три шарика на выбор", "Ice cream", "Three scoops of your choice", 1900]
+    ] },
+    { id: "hot", ru: "Горячие напитки", en: "Hot drinks", model: 4, items: [
+      ["Эспрессо", "Двойная порция", "Espresso", "Double shot", 900],
+      ["Капучино", "Эспрессо и молочная пена", "Cappuccino", "Espresso and steamed milk", 1300],
+      ["Латте", "Мягкий, с большим количеством молока", "Latte", "Mild, with more milk", 1400],
+      ["Флэт уайт", "Двойной эспрессо, немного молока", "Flat white", "Double espresso, a little milk", 1500],
+      ["Чай в чайнике", "Чёрный, зелёный или травяной", "Pot of tea", "Black, green or herbal", 1600],
+      ["Горячий шоколад", "Тёмный шоколад, молоко", "Hot chocolate", "Dark chocolate, milk", 1700]
+    ] },
+    { id: "cold", ru: "Холодные напитки", en: "Cold drinks", model: 5, items: [
+      ["Лимонад цитрусовый", "Лимон, апельсин, мята", "Citrus lemonade", "Lemon, orange, mint", 1800],
+      ["Лимонад ягодный", "Малина, клубника, базилик", "Berry lemonade", "Raspberry, strawberry, basil", 1900],
+      ["Свежевыжатый сок", "Апельсин, яблоко или морковь", "Fresh juice", "Orange, apple or carrot", 2000],
+      ["Холодный чай", "Персик, лимон, лёд", "Iced tea", "Peach, lemon, ice", 1500],
+      ["Айс латте", "Эспрессо, молоко, лёд", "Iced latte", "Espresso, milk, ice", 1600],
+      ["Минеральная вода", "С газом или без, 0,5 л", "Mineral water", "Sparkling or still, 0.5 l", 800]
+    ] }
+  ];
+  const MENU_COUNT = MENU.reduce((n, c) => n + c.items.length, 0);
+  const fmtPrice = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " ₸";
+
+
+  function useActiveSection() {
+    const [active, setActive] = React.useState("home");
+    React.useEffect(() => {
+      let raf = 0;
+      const update = () => {
+        raf = 0;
+        const line = window.innerHeight * 0.35;
+        let cur = NAV_IDS[0];
+        for (const id of NAV_IDS) {
+          const el = document.getElementById(id);
+          if (el && el.getBoundingClientRect().top <= line) cur = id;
+        }
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) cur = NAV_IDS[NAV_IDS.length - 1];
+        setActive(cur);
+      };
+      const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+      update();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll);
+      return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); cancelAnimationFrame(raf); };
+    }, []);
+    return active;
+  }
+
+  function Logo() {
+    return (
+      <a href="#home" className="font-display text-3xl tracking-tight text-ink inline-flex items-baseline gap-2" aria-label="Olea">
+        Olea<span className="text-brass text-base italic">kitchen</span>
+      </a>
+    );
+  }
+
+  function LangSwitch({ className }) {
+    const { lang, setLang } = useLang();
+    return (
+      <div role="group" aria-label="Language" className={"inline-flex rounded-full border border-ink/25 p-0.5 text-xs font-medium " + (className || "")}>
+        {[["en", "EN"], ["ru", "RU"]].map(([k, label]) => (
+          <button key={k} type="button" aria-pressed={lang === k} onClick={() => setLang(k)} lang={k}
+            className={"rounded-full px-3 py-1.5 transition-colors " + (lang === k ? "bg-ink text-bg" : "text-mute hover:text-ink")}>
+            {label}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  function Header({ active }) {
+    const { t } = useLang();
+    const [scrolled, setScrolled] = React.useState(false);
+    const [open, setOpen] = React.useState(false);
+    React.useEffect(() => {
+      const f = () => setScrolled(window.scrollY > 8);
+      f();
+      window.addEventListener("scroll", f, { passive: true });
+      return () => window.removeEventListener("scroll", f);
+    }, []);
+    const link = (label, id, extra) => (
+      <a key={id} href={"#" + id} onClick={() => setOpen(false)} aria-current={active === id ? "true" : undefined}
+        className={"text-sm transition-colors " + (active === id ? "text-ink" : "text-mute hover:text-ink") + " " + (extra || "")}>
+        {label}
+      </a>
+    );
+    return (
+      <header className={"fixed left-0 right-0 top-0 z-50 transition-colors " + (scrolled || open ? "bg-bg/85 backdrop-blur-md border-b border-ink/10" : "border-b border-transparent")}
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+        <div className="gutter">
+          <nav className="flex items-center justify-between gap-4 py-5 md:py-6 max-w-7xl mx-auto" aria-label={t.navLabel}>
+            <Logo />
+            <div className="hidden md:flex items-center gap-8">
+              {NAV_IDS.map((id, i) => link(t.nav[i], id))}
+            </div>
+            <div className="hidden md:flex items-center gap-4">
+              <LangSwitch />
+              <a href="#menu" className="inline-block rounded-full bg-ink text-bg text-sm px-6 py-2.5 transition-transform hover:scale-[1.03]">{t.cta}</a>
+            </div>
+            <div className="md:hidden flex items-center gap-3">
+              <LangSwitch />
+              <button type="button" className="text-sm text-ink rounded-full border border-ink/25 px-4 py-2" aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen(!open)}>
+                {open ? t.close : t.menuBtn}
+              </button>
+            </div>
+          </nav>
+          {open ? (
+            <div id="mobile-menu" className="md:hidden pb-6 flex flex-col gap-5 max-w-7xl mx-auto">
+              {NAV_IDS.map((id, i) => link(t.nav[i], id, "text-lg"))}
+              <a href="#menu" onClick={() => setOpen(false)} className="rounded-full bg-ink text-bg text-base px-6 py-3 text-center">{t.cta}</a>
+            </div>
+          ) : null}
+        </div>
+      </header>
+    );
+  }
+
+  function useInView(ref, threshold) {
+    const [inView, setInView] = React.useState(false);
+    React.useEffect(() => {
+      const el = ref.current;
+      if (!el) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) { setInView(true); return; }
+      const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); io.disconnect(); } }, { threshold: threshold || 0.12, rootMargin: "0px 0px -6% 0px" });
+      io.observe(el);
+      return () => io.disconnect();
+    }, []);
+    return inView;
+  }
+
+  function Reveal({ as, delay, className, children }) {
+    const ref = React.useRef(null);
+    const inView = useInView(ref);
+    const Tag = as || "div";
+    return <Tag ref={ref} className={"reveal " + (inView ? "is-in " : "") + (className || "")} style={{ transitionDelay: (delay || 0) + "s" }}>{children}</Tag>;
+  }
+
+  function CountUp({ value }) {
+    const ref = React.useRef(null);
+    const inView = useInView(ref, 0.4);
+    const target = parseInt(String(value).replace(/\s/g, ""), 10);
+    const [shown, setShown] = React.useState(value);
+    React.useEffect(() => {
+      if (!inView || isNaN(target) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setShown(value); return; }
+      let raf = 0; const start = performance.now(), dur = 1600;
+      const from = target > 1000 ? target - 120 : 0;
+      const step = (now) => {
+        const k = Math.min(1, (now - start) / dur), e = 1 - Math.pow(1 - k, 3);
+        setShown(String(Math.round(from + (target - from) * e)));
+        if (k < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+      return () => cancelAnimationFrame(raf);
+    }, [inView, value]);
+    return <span ref={ref}>{shown}</span>;
+  }
+
+  function Tilt({ as, className, children, max, ...rest }) {
+    const ref = React.useRef(null);
+    const ok = React.useMemo(() => window.matchMedia("(hover: hover) and (pointer: fine)").matches && !window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+    const m = max || 5;
+    const onMove = (e) => {
+      const el = ref.current; if (!el) return;
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      el.style.setProperty("--mx", (x * 100).toFixed(1) + "%"); el.style.setProperty("--my", (y * 100).toFixed(1) + "%");
+      if (ok) el.style.transform = "perspective(1000px) rotateX(" + ((0.5 - y) * m).toFixed(2) + "deg) rotateY(" + ((x - 0.5) * m).toFixed(2) + "deg) translateY(-4px)";
+    };
+    const onLeave = () => { if (ref.current) ref.current.style.transform = ""; };
+    const Tag = as || "div";
+    return <Tag ref={ref} onPointerMove={onMove} onPointerLeave={onLeave} className={"tilt " + (className || "")} {...rest}>{children}</Tag>;
+  }
+
+  function Eyebrow({ children }) {
+    return <p className="text-xs uppercase tracking-[0.18em] text-brass font-medium">{children}</p>;
+  }
+
+  /* Raymarched plate + silver cloche. The lid lifts to show the dish; changing dish closes, swaps and lifts again. */
+  function PlateViewer({ dish, open, onToggle, aria, className }) {
+    const ref = React.useRef(null);
+    const want = React.useRef({ dish, open });
+    const toggleRef = React.useRef(onToggle);
+    React.useEffect(() => { want.current = { dish, open }; }, [dish, open]);
+    React.useEffect(() => { toggleRef.current = onToggle; }, [onToggle]);
+    React.useEffect(() => {
+      const c = ref.current;
+      let gl = null;
+      try { gl = c.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false }); } catch (e) {}
+      if (!gl) return;
+      const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return gl.getShaderParameter(o, gl.COMPILE_STATUS) ? o : null; };
+      const vs = sh(gl.VERTEX_SHADER, "attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}");
+      const fs = sh(gl.FRAGMENT_SHADER, PLATE_FRAG);
+      if (!vs || !fs) return;
+      const pr = gl.createProgram(); gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr); gl.useProgram(pr);
+      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(pr, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      const U = (n) => gl.getUniformLocation(pr, n);
+      const uRes = U("uRes"), uTime = U("uTime"), uRot = U("uRot"), uLift = U("uLift"), uDish = U("uDish");
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const HOME = 0.55;
+      const st = { yaw: HOME, pitch: 0.3, vy: 0, lift: reduce ? (want.current.open ? 1 : 0) : 0, shown: want.current.dish, drag: false, moved: 0, lx: 0, ly: 0, idle: 0, prev: performance.now() };
+      let raf = 0, visible = true;
+      const draw = (now) => {
+        const w0 = c.clientWidth, h0 = c.clientHeight;
+        let dpr = Math.min(window.devicePixelRatio || 1, 2);
+        dpr = Math.min(dpr, Math.sqrt(1.1e6 / Math.max(1, w0 * h0)));
+        const w = Math.max(1, Math.floor(w0 * dpr)), h = Math.max(1, Math.floor(h0 * dpr));
+        if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+        gl.viewport(0, 0, w, h);
+        gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+        const sway = reduce || st.drag ? 0 : 0.28 * Math.sin(now / 2600) * Math.min(1, st.idle / 1500);
+        const sm = st.lift * st.lift * (3 - 2 * st.lift);
+        gl.uniform2f(uRes, w, h); gl.uniform1f(uTime, now / 1000);
+        gl.uniform2f(uRot, st.yaw + sway, st.pitch); gl.uniform1f(uLift, sm); gl.uniform1f(uDish, st.shown);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      };
+      const loop = (now) => {
+        const dt = Math.min(0.05, (now - st.prev) / 1000); st.prev = now;
+        const wnt = want.current;
+        let goal = wnt.open ? 1 : 0;
+        if (st.shown !== wnt.dish) goal = 0;
+        const k = 1 - Math.exp(-dt * (reduce ? 40 : 4.2));
+        st.lift += (goal - st.lift) * k;
+        if (Math.abs(goal - st.lift) < 0.002) st.lift = goal;
+        if (st.shown !== wnt.dish && st.lift < 0.03) st.shown = wnt.dish;
+        if (!st.drag) {
+          st.yaw += st.vy; st.vy *= 0.93;
+          st.idle += dt * 1000;
+          if (st.idle > 2500 && !reduce) st.yaw += (HOME - st.yaw) * 0.012;
+        }
+        draw(now);
+        if (visible) raf = requestAnimationFrame(loop);
+      };
+      const down = (e) => { st.drag = true; st.moved = 0; st.lx = e.clientX; st.ly = e.clientY; st.vy = 0; st.idle = 0; c.setPointerCapture && c.setPointerCapture(e.pointerId); };
+      const move = (e) => {
+        if (!st.drag) return;
+        const dx = e.clientX - st.lx, dy = e.clientY - st.ly; st.lx = e.clientX; st.ly = e.clientY;
+        st.moved += Math.abs(dx) + Math.abs(dy);
+        st.yaw += dx * 0.011; st.vy = dx * 0.011;
+        if (e.pointerType === "mouse") st.pitch = Math.max(0.08, Math.min(0.85, st.pitch + dy * 0.007));
+      };
+      const up = () => { const wasTap = st.drag && st.moved < 6; st.drag = false; st.idle = 0; if (wasTap && toggleRef.current) toggleRef.current(); };
+      const cancel = () => { st.drag = false; st.idle = 0; };
+      c.addEventListener("pointerdown", down); c.addEventListener("pointermove", move);
+      c.addEventListener("pointerup", up); c.addEventListener("pointercancel", cancel);
+      const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; cancelAnimationFrame(raf); if (visible) { st.prev = performance.now(); raf = requestAnimationFrame(loop); } });
+      io.observe(c);
+      raf = requestAnimationFrame(loop);
+      return () => { cancelAnimationFrame(raf); io.disconnect(); c.removeEventListener("pointerdown", down); c.removeEventListener("pointermove", move); c.removeEventListener("pointerup", up); c.removeEventListener("pointercancel", cancel); };
+    }, []);
+    return <canvas ref={ref} role="img" aria-label={aria} className={"block w-full h-full cursor-grab active:cursor-grabbing " + (className || "")} style={{ touchAction: "pan-y" }}></canvas>;
+  }
+
+  function Hero() {
+    const { t, lang } = useLang();
+    const H = t.hero;
+    const [dish, setDish] = React.useState(2);
+    const [open, setOpen] = React.useState(false);
+    const opened = React.useRef(false);
+    React.useEffect(() => {
+      const id = setTimeout(() => { opened.current = true; setOpen(true); }, 1100);
+      return () => clearTimeout(id);
+    }, []);
+    const toggle = React.useCallback(() => {
+      setOpen((o) => {
+        if (o) return false;
+        setDish((d) => (d + 1) % 6);
+        return true;
+      });
+    }, []);
+    let k = 0;
+    const parts = [[H.h[0], false], [H.h[1], true]];
+    const words = parts.map(([txt, it], pi) => txt.split(/(\s+)/).map((w, wi) => {
+      if (!w.trim()) return w;
+      const d = 0.09 * k++;
+      return <span key={lang + pi + "-" + wi} className={"word" + (it ? " italic text-brass" : "")} style={{ animationDelay: d + "s" }}>{w}</span>;
+    }));
+    return (
+      <section id="home" className="relative min-h-screen w-full overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true"
+          style={{ background: "radial-gradient(55% 55% at 72% 52%, rgba(201,168,103,0.13), rgba(201,168,103,0) 70%), radial-gradient(45% 50% at 12% 100%, rgba(66,98,66,0.28), rgba(66,98,66,0) 70%)" }}></div>
+        <div className="relative z-10 gutter">
+          <div className="max-w-7xl mx-auto grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] items-center gap-4 lg:gap-8 min-h-screen pt-28 pb-14">
+            <div className="min-w-0 text-center lg:text-left">
+              <div className="animate-fade-rise"><Eyebrow>{H.eyebrow}</Eyebrow></div>
+              <h1 className="font-display font-normal text-ink text-6xl sm:text-7xl md:text-8xl mt-6" style={{ lineHeight: 0.95, letterSpacing: "-0.0256em" }}>
+                {words}
+              </h1>
+              <p key={"p" + lang} className="animate-fade-rise-delay text-base sm:text-lg text-mute max-w-md mt-8 leading-relaxed mx-auto lg:mx-0" style={{ animationDelay: "0.5s" }}>{H.p}</p>
+              <a href="#menu" className="animate-fade-rise-delay-2 inline-block rounded-full bg-ink text-bg text-base px-12 py-4 mt-10 transition-transform hover:scale-[1.03]" style={{ animationDelay: "0.7s" }}>{t.cta}</a>
+            </div>
+            <div className="min-w-0 animate-fade-rise-delay-2" style={{ animationDelay: "0.3s" }}>
+              <div className="relative h-[380px] sm:h-[480px] lg:h-[640px]">
+                <PlateViewer dish={dish} open={open} onToggle={toggle} aria={H.aria} />
+              </div>
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+                <span className="text-xs text-mute">↔ {H.drag}</span>
+                <button type="button" onClick={toggle} className="nudge rounded-full border border-ink/25 px-5 py-2.5 text-sm text-ink hover:bg-ink hover:text-bg transition-colors">{open ? H.cover : H.lift}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function MenuSection() {
+    const { t, lang } = useLang();
+    const M = t.menu;
+    const [cat, setCat] = React.useState(0);
+    const [open, setOpen] = React.useState(true);
+    const toggle = React.useCallback(() => setOpen((o) => !o), []);
+    const C = MENU[cat];
+    const choose = (i) => { setCat(i); setOpen(true); };
+    return (
+      <section id="menu" className="border-t border-ink/10">
+        <div className="gutter">
+          <div className="max-w-7xl mx-auto py-24 md:py-32">
+            <Reveal className="flex flex-wrap items-end justify-between gap-6">
+              <div>
+                <Eyebrow>{M.eyebrow}</Eyebrow>
+                <h2 className="font-display font-normal text-ink text-5xl sm:text-6xl mt-5" style={{ lineHeight: 0.98, letterSpacing: "-0.025em" }}>
+                  {M.h[0]}<em className="italic text-brass">{M.h[1]}</em>
+                </h2>
+              </div>
+              <p className="text-base text-mute max-w-sm leading-relaxed">{M.p}</p>
+            </Reveal>
+            <Reveal delay={0.1} className="mt-10">
+              <div role="tablist" aria-label={M.eyebrow} className="flex flex-wrap gap-2">
+                {MENU.map((c, i) => (
+                  <button key={c.id} type="button" role="tab" aria-selected={cat === i} onClick={() => choose(i)}
+                    className={"rounded-full px-5 py-2.5 text-sm border transition-colors " + (cat === i ? "bg-ink text-bg border-ink" : "border-ink/20 text-ink hover:border-brass hover:text-brass")}>
+                    {c[lang]} <span className={"ml-1 tabular-nums " + (cat === i ? "text-bg/60" : "text-mute")}>{c.items.length}</span>
+                  </button>
+                ))}
+              </div>
+            </Reveal>
+            <div className="mt-10 grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] gap-6 md:gap-10 items-start">
+              <div className="sticky top-[68px] md:top-24 z-10 md:order-2 bg-bg pb-2 md:pb-0">
+                <div className="plate-stage relative rounded-[2rem] border border-ink/10 overflow-hidden h-[280px] sm:h-[380px] md:h-[560px]">
+                  <PlateViewer dish={C.model} open={open} onToggle={toggle} aria={t.hero.aria} />
+                  <div className="absolute left-4 top-4 right-4 flex justify-between gap-3 pointer-events-none">
+                    <span key={C.id + lang} className="animate-fade-rise rounded-full bg-bg/80 backdrop-blur px-4 py-2 text-sm text-ink border border-ink/15">{C[lang]}</span>
+                  </div>
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-4 rounded-full bg-bg/80 backdrop-blur px-4 py-2 text-xs text-mute border border-ink/15 pointer-events-none whitespace-nowrap">↔ {M.drag}</div>
+                </div>
+              </div>
+              <div className="min-w-0 md:order-1">
+                <Tilt max={2} className="rounded-[1.75rem] border border-ink/15 bg-panel p-6 md:p-8 overflow-hidden">
+                  <div className="flex items-baseline justify-between gap-4 pb-4 border-b border-ink/10">
+                    <h3 className="font-display text-4xl md:text-5xl text-ink leading-none tracking-tight">{C[lang]}</h3>
+                    <span className="text-sm text-mute tabular-nums whitespace-nowrap">{C.items.length} {M.items}</span>
+                  </div>
+                  <ul key={C.id + lang}>
+                    {C.items.map((it, i) => {
+                      const name = lang === "ru" ? it[0] : it[2], text = lang === "ru" ? it[1] : it[3];
+                      return (
+                        <li key={i} className="menu-row animate-fade-rise group flex items-start gap-4 py-4 border-b border-ink/10 last:border-0" style={{ animationDelay: (i * 0.05) + "s" }}>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-lg text-ink transition-colors group-hover:text-brass">{name}</p>
+                            <p className="mt-1 text-sm text-mute leading-relaxed">{text}</p>
+                          </div>
+                          <span className="pt-1 text-base text-ink tabular-nums whitespace-nowrap">{fmtPrice(it[4])}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </Tilt>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function Manifesto({ text }) {
+    const ref = React.useRef(null);
+    React.useEffect(() => {
+      const root = ref.current;
+      const words = Array.from(root.querySelectorAll("[data-w]"));
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let raf = 0;
+      const update = () => {
+        raf = 0;
+        const r = root.getBoundingClientRect(), vh = window.innerHeight;
+        const p = reduce ? 1 : Math.min(1, Math.max(0, (vh * 0.9 - r.top) / (r.height + vh * 0.2)));
+        const lit = Math.round(p * words.length * 1.1);
+        words.forEach((w, i) => { w.style.color = i < lit ? "#f0ece2" : "#6b7468"; });
+      };
+      const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+      update();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll);
+      return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); cancelAnimationFrame(raf); };
+    }, [text]);
+    return (
+      <p ref={ref} className="font-display text-ink text-4xl sm:text-5xl md:text-6xl max-w-5xl" style={{ lineHeight: 1.05, letterSpacing: "-0.02em" }}>
+        {text.split(" ").map((w, i) => <span key={i} data-w style={{ color: "#6b7468", transition: "color 0.3s ease" }}>{w}{" "}</span>)}
+      </p>
+    );
+  }
+
+  function Story() {
+    const { t } = useLang();
+    return (
+      <section id="story" className="border-t border-ink/10">
+        <div className="gutter">
+          <div className="max-w-7xl mx-auto py-24 md:py-32">
+            <Reveal>
+              <Eyebrow>{t.story.eyebrow}</Eyebrow>
+              <div className="mt-8"><Manifesto text={t.story.manifesto} /></div>
+            </Reveal>
+            <dl className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {t.story.facts.map(([n, l], i) => (
+                <Reveal key={i} delay={i * 0.1} className="min-w-0">
+                  <div className="fact-circle mx-auto w-full max-w-[260px] aspect-square rounded-full border border-ink/20 text-ink grid place-items-center text-center p-5">
+                    <div>
+                      <dt className="font-display text-5xl md:text-6xl leading-none tabular-nums"><CountUp value={n} /></dt>
+                      <dd className="fact-label mt-3 text-xs md:text-sm text-mute max-w-[14ch] mx-auto leading-snug transition-colors">{l}</dd>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </dl>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function Visit() {
+    const { t } = useLang();
+    const V = t.visit;
+    return (
+      <section id="visit" className="border-t border-ink/10">
+        <div className="gutter">
+          <div className="max-w-7xl mx-auto py-24 md:py-32 grid md:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] gap-10 md:gap-16 items-center">
+            <Reveal className="min-w-0">
+              <Eyebrow>{V.eyebrow}</Eyebrow>
+              <h2 className="font-display font-normal text-ink text-5xl sm:text-7xl mt-6" style={{ lineHeight: 0.95, letterSpacing: "-0.0256em" }}>
+                {V.h[0]}<em className="italic text-brass">{V.h[1]}</em>
+              </h2>
+              <p className="mt-6 text-base sm:text-lg text-mute leading-relaxed max-w-md">{V.p}</p>
+            </Reveal>
+            <Reveal delay={0.12} className="min-w-0">
+              <Tilt className="rounded-[1.75rem] border border-ink/15 bg-panel p-7 md:p-9 overflow-hidden">
+                <dl className="grid gap-0">
+                  {V.hours.map(([d, h], i) => (
+                    <div key={i} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-5 border-b border-ink/10 first:pt-0">
+                      <dt className="text-base text-mute">{d}</dt>
+                      <dd className="font-display text-3xl text-ink tabular-nums">{h}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="mt-6 text-base text-ink">{V.place}</p>
+              </Tilt>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function Footer() {
+    const { t } = useLang();
+    return (
+      <footer className="border-t border-ink/10">
+        <div className="gutter">
+          <div className="max-w-7xl mx-auto py-10 flex flex-wrap items-center justify-between gap-x-10 gap-y-5">
+            <Logo />
+            <nav className="flex flex-wrap gap-x-7 gap-y-2" aria-label={t.navLabel}>
+              {NAV_IDS.map((id, i) => <a key={id} href={"#" + id} className="text-sm text-mute hover:text-ink transition-colors">{t.nav[i]}</a>)}
+            </nav>
+            <div className="w-full pt-5 border-t border-ink/15 flex flex-wrap justify-between gap-x-8 gap-y-3 text-sm text-mute">
+              <span>{t.footer.note}</span>
+              <a href="#home" className="hover:text-ink transition-colors">{t.footer.top}</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
+  function initialLang() {
+    try { const v = localStorage.getItem("olea-lang"); if (v === "en" || v === "ru") return v; } catch (e) {}
+    return (navigator.language || "en").toLowerCase().indexOf("ru") === 0 ? "ru" : "en";
+  }
+
+  function App() {
+    const [lang, setLangState] = React.useState(initialLang);
+    const setLang = (l) => { setLangState(l); try { localStorage.setItem("olea-lang", l); } catch (e) {} };
+    React.useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+    const ctx = React.useMemo(() => ({ lang, t: T[lang], setLang }), [lang]);
+    const active = useActiveSection();
+    return (
+      <LangCtx.Provider value={ctx}>
+        <Header active={active} />
+        <main>
+          <Hero />
+          <MenuSection />
+          <Story />
+          <Visit />
+        </main>
+        <Footer />
+      </LangCtx.Provider>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
