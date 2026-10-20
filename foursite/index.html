@@ -1,0 +1,858 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aoi Tea</title>
+<meta name="description" content="Aoi is a fictional tea house. Minimal black and blue landing page with a 3D tea bowl that changes colour by variety, six tea types, twelve flavours and a brewing timer. RU / EN.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@1,400;1,500&display=swap">
+
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ["Manrope", "system-ui", "sans-serif"], accent: ["'Cormorant Garamond'", "Georgia", "serif"] },
+        colors: { bg: "#050607", panel: "#0c0e12", ink: "#eef1f5", mute: "#8a93a3", blue: "#3d7bff", sky: "#8fb3ff" }
+      }
+    }
+  };
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+
+<style>
+  /* Layout: near-black page, one cobalt accent. Hero pairs a light headline with a raymarched 3D tea bowl; Sorts pins a second bowl beside six varieties; Flavours is a filterable grid; Brew ends with a ring timer.
+     Palette: black ground, cool white text, slate grey, cobalt blue + pale sky for italics. Single dark look by choice. */
+  :root { --bg: #050607; --panel: #0c0e12; --ink: #eef1f5; --mute: #8a93a3; --blue: #3d7bff; --sky: #8fb3ff; color-scheme: dark; }
+  html { scroll-behavior: smooth; background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: Manrope, system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  section[id] { scroll-margin-top: 72px; }
+  .gutter { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 6px; }
+  .accent { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-weight: 500; color: var(--sky); letter-spacing: 0; }
+
+  @keyframes fade-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  .rise { animation: fade-rise 0.8s cubic-bezier(.2,.7,.2,1) both; }
+  .word { display: inline-block; animation: fade-rise 0.9s cubic-bezier(.2,.7,.2,1) both; }
+  .reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.9s cubic-bezier(.2,.7,.2,1), transform 0.9s cubic-bezier(.2,.7,.2,1); }
+  .reveal.is-in { opacity: 1; transform: none; }
+
+  .tilt { position: relative; transition: transform 0.35s cubic-bezier(.2,.7,.2,1), border-color 0.3s ease, background-color 0.3s ease; will-change: transform; }
+  .tilt::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 0.35s ease;
+    background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), rgba(61,123,255,0.16), rgba(61,123,255,0) 50%); }
+  .tilt:hover { border-color: rgba(61,123,255,0.55); }
+  .tilt:hover::after { opacity: 1; }
+
+  .glow { background: radial-gradient(520px circle at var(--gx, 70%) var(--gy, 45%), rgba(61,123,255,0.16), rgba(61,123,255,0) 60%); transition: background 0.2s; }
+  .stage { background: radial-gradient(60% 55% at 50% 60%, #0d1424 0%, #080a10 60%, #050607 100%); }
+
+  .orb { position: relative; border-radius: 9999px; overflow: hidden; transition: transform 0.6s cubic-bezier(.2,.7,.2,1); }
+  .orb::before { content: ""; position: absolute; inset: -40%; background: conic-gradient(from 0deg, transparent 0 70%, rgba(255,255,255,0.55) 80%, transparent 90%); animation: spin 6s linear infinite; opacity: 0.35; transition: opacity 0.4s; }
+  .orb::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.55), rgba(255,255,255,0) 40%); }
+  .card:hover .orb { transform: scale(1.12) rotate(-8deg); }
+  .card:hover .orb::before { opacity: 0.8; animation-duration: 2.4s; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .row-line { position: relative; }
+  .row-line::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--blue); transform: scaleX(0); transform-origin: left; transition: transform 0.5s cubic-bezier(.2,.7,.2,1); }
+  .row-line:hover::after, .row-line[aria-selected="true"]::after { transform: scaleX(1); }
+
+  .step-circle { transition: background-color 0.5s ease, color 0.5s ease, transform 0.5s cubic-bezier(.2,.7,.2,1), border-color 0.5s ease; }
+  .step-circle:hover { background: var(--blue); border-color: var(--blue); transform: scale(1.04); }
+  .step-circle:hover .step-label { color: rgba(255,255,255,0.85); }
+
+  @keyframes pulse-ring { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+  .done-pulse { animation: pulse-ring 1.4s ease-in-out infinite; }
+  @keyframes drip { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .bar { transform-origin: left; animation: drip 0.9s cubic-bezier(.2,.7,.2,1) both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .rise, .word, .bar, .done-pulse, .orb::before { animation: none; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .tilt, .step-circle, .orb { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+"use strict";
+(function(){
+"use strict";
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
+const NAV_IDS = ["home", "sorts", "flavours", "brew"];
+/* tea varieties: colour of the brew, steep time in seconds for the timer */
+const TEAS = [
+    { id: "green", rgb: [0.55, 0.62, 0.18], secs: 90, caf: 3,
+        ru: { name: "Зелёный", sort: "Сенча", origin: "Япония, Сидзуока", temp: "75–80°C", time: "1–2 мин", notes: "Травянистый, свежий, с морской нотой" },
+        en: { name: "Green", sort: "Sencha", origin: "Japan, Shizuoka", temp: "75–80°C", time: "1–2 min", notes: "Grassy and fresh with a hint of the sea" } },
+    { id: "white", rgb: [0.86, 0.7, 0.3], secs: 210, caf: 2,
+        ru: { name: "Белый", sort: "Бай Хао Инь Чжэнь", origin: "Китай, Фуцзянь", temp: "75°C", time: "3–4 мин", notes: "Медовый, цветочный, очень мягкий" },
+        en: { name: "White", sort: "Silver Needle", origin: "China, Fujian", temp: "75°C", time: "3–4 min", notes: "Honeyed, floral and very soft" } },
+    { id: "oolong", rgb: [0.78, 0.5, 0.13], secs: 120, caf: 3,
+        ru: { name: "Улун", sort: "Те Гуань Инь", origin: "Китай, Аньси", temp: "90°C", time: "1–3 мин", notes: "Сливочный, орхидея и мёд" },
+        en: { name: "Oolong", sort: "Tie Guan Yin", origin: "China, Anxi", temp: "90°C", time: "1–3 min", notes: "Creamy, orchid and honey" } },
+    { id: "black", rgb: [0.5, 0.13, 0.03], secs: 240, caf: 4,
+        ru: { name: "Чёрный", sort: "Ассам", origin: "Индия, Ассам", temp: "95°C", time: "3–5 мин", notes: "Солодовый, насыщенный, бодрящий" },
+        en: { name: "Black", sort: "Assam", origin: "India, Assam", temp: "95°C", time: "3–5 min", notes: "Malty, full-bodied and bright" } },
+    { id: "puer", rgb: [0.2, 0.06, 0.02], secs: 20, caf: 4,
+        ru: { name: "Пуэр", sort: "Шу пуэр", origin: "Китай, Юньнань", temp: "95–100°C", time: "10–30 сек", notes: "Землистый, древесный, плотный" },
+        en: { name: "Pu-erh", sort: "Shou pu-erh", origin: "China, Yunnan", temp: "95–100°C", time: "10–30 sec", notes: "Earthy, woody and dense" } },
+    { id: "herbal", rgb: [0.62, 0.05, 0.12], secs: 360, caf: 0,
+        ru: { name: "Травяной", sort: "Гибискус и ройбуш", origin: "Египет и ЮАР", temp: "100°C", time: "5–7 мин", notes: "Ягодный, с кислинкой, без кофеина" },
+        en: { name: "Herbal", sort: "Hibiscus and rooibos", origin: "Egypt and South Africa", temp: "100°C", time: "5–7 min", notes: "Berry-tart and caffeine-free" } }
+];
+const hex = (c) => "#" + c.map((v) => Math.round(v * 255).toString(16).padStart(2, "0")).join("");
+/* flavours: [cat, base tea index, colour, ru name, ru notes, en name, en notes, price per 50 g] */
+const FLAVOURS = [
+    ["floral", 0, "#e9e2bf", "Жасмин", "Цветы жасмина на зелёном чае", "Jasmine", "Jasmine blossom on green tea", 2900],
+    ["floral", 1, "#b9a6e8", "Лаванда и мёд", "Мягкий белый чай с лавандой", "Lavender and honey", "Soft white tea with lavender", 3400],
+    ["floral", 2, "#f0a7b6", "Роза и личи", "Улун, лепестки розы, личи", "Rose and lychee", "Oolong, rose petals, lychee", 3600],
+    ["fruit", 3, "#7fb2ff", "Эрл Грей", "Ассам с маслом бергамота", "Earl Grey", "Assam with bergamot oil", 2600],
+    ["fruit", 2, "#ffb27a", "Персик", "Улун с сушёным персиком", "Peach", "Oolong with dried peach", 3100],
+    ["fruit", 3, "#4a5bd6", "Черника", "Чёрный чай и ягоды черники", "Blueberry", "Black tea and blueberries", 2700],
+    ["fruit", 5, "#ff9f1c", "Облепиха", "Травяной сбор с облепихой", "Sea buckthorn", "Herbal blend with sea buckthorn", 2400],
+    ["spice", 3, "#c9773a", "Масала", "Корица, кардамон, гвоздика, имбирь", "Masala", "Cinnamon, cardamom, clove, ginger", 2800],
+    ["spice", 0, "#e6d36a", "Имбирь и лимон", "Зелёный чай, имбирь, цедра", "Ginger and lemon", "Green tea, ginger, zest", 2700],
+    ["spice", 3, "#b5523b", "Яблоко и корица", "Чёрный чай, яблоко, корица", "Apple and cinnamon", "Black tea, apple, cinnamon", 2600],
+    ["herb", 5, "#7fd8a6", "Мята", "Перечная мята, без кофеина", "Mint", "Peppermint, caffeine-free", 2200],
+    ["herb", 3, "#9fb27a", "Чабрец", "Чёрный чай с горным чабрецом", "Thyme", "Black tea with mountain thyme", 2500]
+];
+const fmtPrice = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " ₸";
+const T = {
+    en: {
+        nav: ["Home", "Teas", "Flavours", "Brew"], navLabel: "Main", menuBtn: "Menu", close: "Close", cta: "Choose a tea",
+        hero: { eyebrow: "Tea house · since 2026", h: ["Tea for ", "quiet", " evenings."], p: "Six varieties and twelve flavours. Pick a tea and the bowl fills with it.", drag: "Drag to rotate · tap for the next tea", aria: "3D tea bowl. Drag to rotate." },
+        sorts: { eyebrow: "Varieties", h: ["Six teas, ", "one ritual."], origin: "Origin", temp: "Water", time: "Steep", caf: "Caffeine", none: "none", sortLbl: "Sort" },
+        flav: { eyebrow: "Flavours", h: ["Twelve ", "flavours."], p: "Blends on top of our six teas. Hover a card to stir it.", cats: [["all", "All"], ["floral", "Floral"], ["fruit", "Fruity"], ["spice", "Spiced"], ["herb", "Herbal"]], per: "per 50 g", base: "Base" },
+        brew: { eyebrow: "Brewing", h: ["Brew it ", "slowly."],
+            steps: [["3 g", "of leaf for 200 ml"], ["75–100°", "water, by variety"], ["1–5", "minutes to steep"], ["3×", "infusions from one leaf"]],
+            timer: "Steeping timer", start: "Start", pause: "Pause", reset: "Reset", done: "Ready. Pour it.", forTea: "Tea" },
+        footer: { note: "© 2026 Aoi. A fictional tea house, concept page for a portfolio.", top: "Back to top ↑" }
+    },
+    ru: {
+        nav: ["Главная", "Сорта", "Вкусы", "Заварка"], navLabel: "Основное меню", menuBtn: "Меню", close: "Закрыть", cta: "Выбрать чай",
+        hero: { eyebrow: "Чайный дом · с 2026", h: ["Чай для ", "тихих", " вечеров."], p: "Шесть сортов и двенадцать вкусов. Выберите чай, и чаша наполнится им.", drag: "Потяните, чтобы повернуть · нажмите для следующего", aria: "3D-чаша с чаем. Потяните, чтобы повернуть." },
+        sorts: { eyebrow: "Сорта", h: ["Шесть сортов, ", "один ритуал."], origin: "Откуда", temp: "Вода", time: "Время", caf: "Кофеин", none: "нет", sortLbl: "Сорт" },
+        flav: { eyebrow: "Вкусы", h: ["Двенадцать ", "вкусов."], p: "Купажи на основе наших шести сортов. Наведите на карточку, чтобы размешать.", cats: [["all", "Все"], ["floral", "Цветочные"], ["fruit", "Фруктовые"], ["spice", "Пряные"], ["herb", "Травяные"]], per: "за 50 г", base: "Основа" },
+        brew: { eyebrow: "Заварка", h: ["Заваривайте ", "неспешно."],
+            steps: [["3 г", "листа на 200 мл"], ["75–100°", "вода, по сорту"], ["1–5", "минут настаивать"], ["3×", "пролива из одного листа"]],
+            timer: "Таймер заварки", start: "Старт", pause: "Пауза", reset: "Сброс", done: "Готово. Наливайте.", forTea: "Сорт" },
+        footer: { note: "© 2026 Aoi. Вымышленный чайный дом, концепт-страница для портфолио.", top: "Наверх ↑" }
+    }
+};
+const LangCtx = React.createContext({ lang: "en", t: T.en, setLang: () => { } });
+const useLang = () => React.useContext(LangCtx);
+const TeaCtx = React.createContext({ tea: 0, setTea: () => { } });
+const useTea = () => React.useContext(TeaCtx);
+const TEA_FRAG = `#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform vec2 uRes;
+uniform float uTime;
+uniform vec2 uRot;   // yaw, pitch
+uniform vec3 uTea;   // brewed tea colour
+uniform float uSteam; // 0..1
+
+vec2 U(vec2 a, vec2 b){ return a.x < b.x ? a : b; }
+float smin(float a, float b, float k){ float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0); return mix(b, a, h) - k * h * (1.0 - h); }
+mat2 rot(float a){ float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
+float sdEll(vec3 p, vec3 r){ float k0 = length(p / r); float k1 = length(p / (r * r)); return k0 * (k0 - 1.0) / k1; }
+float sdRoundCyl(vec3 p, float r, float h, float rr){ vec2 d = vec2(length(p.xz) - r + rr, abs(p.y) - h + rr); return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - rr; }
+float sdTorus(vec3 p, vec2 t){ vec2 q = vec2(length(p.xz) - t.x, p.y); return length(q) - t.y; }
+float hash3(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float noise(vec3 x){
+  vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(hash3(i), hash3(i + vec3(1,0,0)), f.x), mix(hash3(i + vec3(0,1,0)), hash3(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(hash3(i + vec3(0,0,1)), hash3(i + vec3(1,0,1)), f.x), mix(hash3(i + vec3(0,1,1)), hash3(i + vec3(1,1,1)), f.x), f.y), f.z);
+}
+
+float leaf(vec3 p, vec3 pos, float a, float tilt, vec3 r){
+  vec3 q = p - pos;
+  q.xz = rot(a) * q.xz;
+  q.xy = rot(tilt) * q.xy;
+  q.y -= 0.9 * (q.x * q.x) - 0.25 * q.z * q.z;
+  return sdEll(q, r) * 0.8;
+}
+
+const vec3 CUPC = vec3(0.0, 0.84, 0.0);
+const float RIM = 1.16;
+
+vec2 map(vec3 p){
+  // slate saucer
+  vec2 res = vec2(sdRoundCyl(p - vec3(0.0, 0.03, 0.0), 1.45, 0.03, 0.025), 1.0);
+  // bowl
+  float e = sdEll(p - CUPC, vec3(0.95, 0.76, 0.95));
+  float shell = max(abs(e) - 0.035, p.y - RIM);
+  float rr = 0.95 * sqrt(1.0 - pow((RIM - CUPC.y) / 0.76, 2.0));
+  shell = smin(shell, sdTorus(p - vec3(0.0, RIM, 0.0), vec2(rr - 0.002, 0.036)), 0.02);
+  float foot = sdRoundCyl(p - vec3(0.0, 0.12, 0.0), 0.4, 0.07, 0.02);
+  shell = smin(shell, max(foot, -sdRoundCyl(p - vec3(0.0, 0.06, 0.0), 0.3, 0.05, 0.01)), 0.06);
+  res = U(res, vec2(shell, 2.0));
+  // tea
+  float r = length(p.xz);
+  float lvl = 1.02 + 0.004 * sin(r * 28.0 - uTime * 2.4) * smoothstep(0.85, 0.2, r);
+  float tea = max(sdEll(p - CUPC, vec3(0.915, 0.725, 0.915)), p.y - lvl);
+  res = U(res, vec2(tea, 3.0));
+  // a leaf floating on the tea
+  float a0 = uTime * 0.15;
+  float lf = leaf(p, vec3(0.28 * cos(a0), 1.025, 0.28 * sin(a0)), -a0 + 0.6, 0.0, vec3(0.2, 0.016, 0.08));
+  // leaves drifting around the cup
+  for (int i = 0; i < 3; i++){
+    float fi = float(i);
+    float a = uTime * 0.22 + fi * 2.094;
+    vec3 pos = vec3(cos(a) * 1.6, 1.35 + 0.35 * sin(uTime * 0.7 + fi * 1.7) + fi * 0.18, sin(a) * 1.75);
+    lf = min(lf, leaf(p, pos, -a + fi, 0.5 * sin(uTime * 0.9 + fi), vec3(0.24, 0.018, 0.1)));
+  }
+  res = U(res, vec2(lf, 4.0));
+  return res;
+}
+
+vec3 normalAt(vec3 p){
+  vec2 e = vec2(1.0, -1.0) * 0.001;
+  return normalize(e.xyy * map(p + e.xyy).x + e.yyx * map(p + e.yyx).x + e.yxy * map(p + e.yxy).x + e.xxx * map(p + e.xxx).x);
+}
+float shadow(vec3 ro, vec3 rd){
+  float res = 1.0, t = 0.03;
+  for (int i = 0; i < 26; i++){
+    float h = map(ro + rd * t).x;
+    res = min(res, 8.0 * h / t);
+    t += clamp(h, 0.02, 0.25);
+    if (res < 0.02 || t > 5.0) break;
+  }
+  return clamp(res, 0.0, 1.0);
+}
+float aoAt(vec3 p, vec3 n){
+  float o = 0.0, s = 1.0;
+  for (int i = 1; i <= 5; i++){ float h = 0.035 * float(i); o += (h - map(p + n * h).x) * s; s *= 0.72; }
+  return clamp(1.0 - 2.2 * o, 0.0, 1.0);
+}
+mat3 rotY(float a){ float c = cos(a), s = sin(a); return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c); }
+mat3 rotX(float a){ float c = cos(a), s = sin(a); return mat3(1.0, 0.0, 0.0, 0.0, c, s, 0.0, -s, c); }
+
+// dark studio in camera space: white softbox top-left, cobalt strip right, faint blue floor bounce
+vec3 envMap(vec3 d){
+  vec3 col = mix(vec3(0.01, 0.012, 0.018), vec3(0.06, 0.08, 0.12), smoothstep(-0.2, 1.0, d.y));
+  float box = smoothstep(0.42, 0.12, length(vec2(d.x + 0.45, d.y - 0.6) * vec2(1.0, 1.2))) * smoothstep(-0.4, 0.2, d.z);
+  col += vec3(1.0, 0.98, 0.95) * 2.6 * box;
+  float strip = smoothstep(0.1, 0.0, abs(d.x - 0.8)) * smoothstep(0.9, 0.2, abs(d.y - 0.15));
+  col += vec3(0.2, 0.45, 1.0) * 2.4 * strip;
+  float strip2 = smoothstep(0.06, 0.0, abs(d.x + 0.92)) * smoothstep(0.7, 0.1, abs(d.y)) ;
+  col += vec3(0.25, 0.5, 1.0) * 0.8 * strip2;
+  return col;
+}
+
+// steam: a few noise samples in a column above the cup
+vec2 steam(vec3 ro, vec3 rd, float tmax){
+  float acc = 0.0;
+  // intersect with the column bounding box
+  vec3 bmin = vec3(-0.9, 1.05, -0.9), bmax = vec3(0.9, 3.0, 0.9);
+  vec3 t0 = (bmin - ro) / rd, t1 = (bmax - ro) / rd;
+  vec3 tl = min(t0, t1), th = max(t0, t1);
+  float ta = max(max(tl.x, tl.y), tl.z), tb = min(min(th.x, th.y), th.z);
+  if (tb <= max(ta, 0.0)) return vec2(0.0);
+  ta = max(ta, 0.0); tb = min(tb, tmax);
+  if (tb <= ta) return vec2(0.0);
+  float dt = (tb - ta) / 14.0;
+  float t = ta + dt * hash3(vec3(gl_FragCoord.xy, 1.0));
+  for (int i = 0; i < 14; i++){
+    vec3 p = ro + rd * t;
+    float h = (p.y - 1.05) / 1.9;
+    vec3 q = p;
+    q.xz += 0.18 * vec2(sin(p.y * 2.3 - uTime * 0.9), cos(p.y * 1.9 - uTime * 0.7)) * h;
+    float rad = length(q.xz) / (0.55 + 0.35 * h);
+    float n = noise(vec3(q.x * 2.6, q.y * 1.6 - uTime * 0.75, q.z * 2.6)) * 0.65 + noise(vec3(q.x * 5.0, q.y * 3.4 - uTime * 1.3, q.z * 5.0)) * 0.35;
+    float dens = smoothstep(0.42, 0.75, n) * smoothstep(1.0, 0.2, rad) * smoothstep(0.0, 0.12, h) * smoothstep(1.0, 0.35, h);
+    acc += dens * dt * 1.6;
+    t += dt;
+  }
+  return vec2(clamp(acc * uSteam, 0.0, 0.55), 1.0);
+}
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / min(uRes.x, uRes.y * 0.95);
+  vec3 ro = vec3(0.0, 0.0, 7.4);
+  vec3 rd = normalize(vec3(uv, -1.95));
+  mat3 R = rotY(uRot.x) * rotX(-uRot.y);
+  vec3 target = vec3(0.0, 1.05, 0.0);
+  ro = R * ro; rd = R * rd; ro += target;
+
+  vec3 L1 = normalize(R * vec3(-0.55, 0.85, 0.6));
+  vec3 L2 = normalize(R * vec3(0.9, 0.25, -0.35));
+
+  vec3 oc = ro - vec3(0.0, 1.1, 0.0);
+  float b = dot(oc, rd), c = dot(oc, oc) - 2.8 * 2.8, hh = b * b - c;
+  float t = 0.0, d = 1.0; bool hit = false;
+  if (hh > 0.0){
+    t = max(0.0, -b - sqrt(hh));
+    float tEnd = -b + sqrt(hh);
+    for (int i = 0; i < 120; i++){
+      d = map(ro + rd * t).x;
+      if (d < 0.0007 * (1.0 + t * 0.15)){ hit = true; break; }
+      if (t > tEnd) break;
+      t += d * 0.85;
+    }
+  }
+
+  vec2 st = steam(ro, rd, hit ? t : 30.0);
+  vec3 steamCol = vec3(0.82, 0.88, 1.0);
+
+  if (!hit){
+    float alpha = 0.0;
+    if (rd.y < -0.001){
+      float tf = -ro.y / rd.y;
+      if (tf > 0.0){
+        vec3 fp = ro + rd * tf;
+        float sh = shadow(fp + vec3(0.0, 0.03, 0.0), L1);
+        float r = length(fp.xz);
+        float ao = exp(-max(r - 1.45, 0.0) * 2.6) * 0.6;
+        alpha = clamp((1.0 - sh) * 0.6 * smoothstep(4.5, 1.4, r) + ao * smoothstep(3.0, 1.5, r), 0.0, 0.85);
+      }
+    }
+    vec2 sc = gl_FragCoord.xy / uRes;
+    alpha *= smoothstep(0.0, 0.14, min(min(sc.x, 1.0 - sc.x), min(sc.y, 1.0 - sc.y)));
+    float a = st.x + alpha * (1.0 - st.x);
+    vec3 col = a > 0.001 ? steamCol * st.x / a : vec3(0.0);
+    gl_FragColor = vec4(col, a);
+    return;
+  }
+
+  vec3 p = ro + rd * t;
+  vec3 n = normalAt(p);
+  vec3 v = -rd;
+  float id = map(p).y;
+
+  vec3 alb; float shin, refl, sss = 0.0;
+  if (id < 1.5){            // slate
+    float g = noise(p * 18.0) * 0.5 + noise(p * 60.0) * 0.5;
+    alb = vec3(0.03, 0.032, 0.036) * (0.7 + 0.6 * g); shin = 30.0; refl = 0.12;
+  } else if (id < 2.5){     // black glaze with cobalt hare's-fur streaks
+    float ang = atan(p.z, p.x);
+    float fur = noise(vec3(ang * 22.0, p.y * 3.0, 0.0)) * smoothstep(0.35, 1.1, p.y);
+    alb = mix(vec3(0.012, 0.013, 0.016), vec3(0.06, 0.16, 0.42), smoothstep(0.45, 0.85, fur) * 0.85);
+    alb = mix(alb, vec3(0.32, 0.22, 0.12), smoothstep(RIM - 0.05, RIM + 0.02, p.y) * 0.6); // iron rim
+    shin = 220.0; refl = 0.55;
+  } else if (id < 3.5){     // tea
+    float r = length(p.xz);
+    alb = uTea * mix(1.0, 0.55, smoothstep(0.85, 0.0, r));
+    shin = 300.0; refl = 0.35; sss = 0.5;
+  } else {                  // leaves
+    alb = vec3(0.16, 0.36, 0.12); shin = 60.0; refl = 0.15; sss = 0.25;
+  }
+
+  float sh = shadow(p + n * 0.012, L1);
+  float occ = aoAt(p, n);
+  float wrap1 = clamp((dot(n, L1) + 0.2) / 1.2, 0.0, 1.0) * mix(0.2, 1.0, sh);
+  float wrap2 = clamp((dot(n, L2) + 0.4) / 1.4, 0.0, 1.0);
+  vec3 col = alb * (0.12 + 1.05 * wrap1) + alb * vec3(0.4, 0.6, 1.0) * 0.35 * wrap2;
+  col += alb * sss * pow(clamp(dot(v, -L1) + 0.3, 0.0, 1.0), 2.0) * 0.5;
+  float sp = pow(max(dot(n, normalize(L1 + v)), 0.0), shin) * sh;
+  float sp2 = pow(max(dot(n, normalize(L2 + v)), 0.0), shin * 0.6);
+  col += vec3(1.0) * sp * (0.6 + 1.5 * refl) + vec3(0.35, 0.6, 1.0) * sp2 * (0.4 + refl);
+  float fres = pow(1.0 - max(dot(n, v), 0.0), 4.0);
+  vec3 env = envMap(reflect(rd, n) * R);
+  col = mix(col, env, clamp(refl * (0.3 + 0.7 * fres), 0.0, 1.0));
+  // cobalt rim light
+  col += vec3(0.2, 0.42, 1.0) * fres * 0.35 * (id > 3.5 ? 0.6 : 1.0);
+  col *= mix(0.45, 1.0, occ);
+
+  col = col / (1.0 + col * 0.25);
+  col = pow(col, vec3(0.9));
+  col = mix(col, steamCol, st.x);
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+function useActiveSection() {
+    const [active, setActive] = React.useState("home");
+    React.useEffect(() => {
+        let raf = 0;
+        const update = () => {
+            raf = 0;
+            const line = window.innerHeight * 0.35;
+            let cur = NAV_IDS[0];
+            for (const id of NAV_IDS) {
+                const el = document.getElementById(id);
+                if (el && el.getBoundingClientRect().top <= line)
+                    cur = id;
+            }
+            if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4)
+                cur = NAV_IDS[NAV_IDS.length - 1];
+            setActive(cur);
+        };
+        const onScroll = () => { if (!raf)
+            raf = requestAnimationFrame(update); };
+        update();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", onScroll);
+        return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); cancelAnimationFrame(raf); };
+    }, []);
+    return active;
+}
+function useInView(ref, threshold) {
+    const [inView, setInView] = React.useState(false);
+    React.useEffect(() => {
+        const el = ref.current;
+        if (!el)
+            return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
+            setInView(true);
+            return;
+        }
+        const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) {
+            setInView(true);
+            io.disconnect();
+        } }, { threshold: threshold || 0.12, rootMargin: "0px 0px -6% 0px" });
+        io.observe(el);
+        return () => io.disconnect();
+    }, []);
+    return inView;
+}
+function Reveal({ as, delay, className, children }) {
+    const ref = React.useRef(null);
+    const inView = useInView(ref);
+    const Tag = as || "div";
+    return React.createElement(Tag, { ref: ref, className: "reveal " + (inView ? "is-in " : "") + (className || ""), style: { transitionDelay: (delay || 0) + "s" } }, children);
+}
+function Tilt(_a) {
+    var { as, className, children, max } = _a, rest = __rest(_a, ["as", "className", "children", "max"]);
+    const ref = React.useRef(null);
+    const ok = React.useMemo(() => window.matchMedia("(hover: hover) and (pointer: fine)").matches && !window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+    const m = max || 5;
+    const onMove = (e) => {
+        const el = ref.current;
+        if (!el)
+            return;
+        const r = el.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+        el.style.setProperty("--mx", (x * 100).toFixed(1) + "%");
+        el.style.setProperty("--my", (y * 100).toFixed(1) + "%");
+        if (ok)
+            el.style.transform = "perspective(1000px) rotateX(" + ((0.5 - y) * m).toFixed(2) + "deg) rotateY(" + ((x - 0.5) * m).toFixed(2) + "deg) translateY(-4px)";
+    };
+    const onLeave = () => { if (ref.current)
+        ref.current.style.transform = ""; };
+    const Tag = as || "div";
+    return React.createElement(Tag, Object.assign({ ref: ref, onPointerMove: onMove, onPointerLeave: onLeave, className: "tilt " + (className || "") }, rest), children);
+}
+function Eyebrow({ children }) {
+    return React.createElement("p", { className: "text-xs uppercase tracking-[0.22em] text-blue font-medium flex items-center gap-3" },
+        React.createElement("span", { className: "inline-block w-6 h-px bg-blue" }),
+        children);
+}
+function Logo() {
+    return (React.createElement("a", { href: "#home", className: "text-2xl font-light tracking-tight text-ink inline-flex items-center gap-2", "aria-label": "Aoi" },
+        React.createElement("span", { className: "inline-block w-2.5 h-2.5 rounded-full bg-blue shadow-[0_0_14px_rgba(61,123,255,0.9)]" }),
+        "aoi"));
+}
+function LangSwitch() {
+    const { lang, setLang } = useLang();
+    return (React.createElement("div", { role: "group", "aria-label": "Language", className: "inline-flex rounded-full border border-ink/20 p-0.5 text-xs font-medium" }, [["en", "EN"], ["ru", "RU"]].map(([k, label]) => (React.createElement("button", { key: k, type: "button", "aria-pressed": lang === k, onClick: () => setLang(k), lang: k, className: "rounded-full px-3 py-1.5 transition-colors " + (lang === k ? "bg-blue text-white" : "text-mute hover:text-ink") }, label)))));
+}
+function Header({ active }) {
+    const { t } = useLang();
+    const [scrolled, setScrolled] = React.useState(false);
+    const [open, setOpen] = React.useState(false);
+    React.useEffect(() => {
+        const f = () => setScrolled(window.scrollY > 8);
+        f();
+        window.addEventListener("scroll", f, { passive: true });
+        return () => window.removeEventListener("scroll", f);
+    }, []);
+    const link = (label, id, extra) => (React.createElement("a", { key: id, href: "#" + id, onClick: () => setOpen(false), "aria-current": active === id ? "true" : undefined, className: "text-sm transition-colors inline-flex items-center gap-2 " + (active === id ? "text-ink" : "text-mute hover:text-ink") + " " + (extra || "") },
+        React.createElement("span", { className: "w-1 h-1 rounded-full bg-blue transition-opacity " + (active === id ? "opacity-100" : "opacity-0") }),
+        label));
+    return (React.createElement("header", { className: "fixed left-0 right-0 top-0 z-50 transition-colors " + (scrolled || open ? "bg-bg/80 backdrop-blur-md border-b border-ink/10" : "border-b border-transparent"), style: { paddingTop: "env(safe-area-inset-top, 0px)" } },
+        React.createElement("div", { className: "gutter" },
+            React.createElement("nav", { className: "flex items-center justify-between gap-4 py-5 max-w-7xl mx-auto", "aria-label": t.navLabel },
+                React.createElement(Logo, null),
+                React.createElement("div", { className: "hidden md:flex items-center gap-8" }, NAV_IDS.map((id, i) => link(t.nav[i], id))),
+                React.createElement("div", { className: "hidden md:flex items-center gap-4" },
+                    React.createElement(LangSwitch, null),
+                    React.createElement("a", { href: "#sorts", className: "rounded-full bg-blue text-white text-sm px-6 py-2.5 transition hover:brightness-110 hover:shadow-[0_0_24px_rgba(61,123,255,0.55)]" }, t.cta)),
+                React.createElement("div", { className: "md:hidden flex items-center gap-3" },
+                    React.createElement(LangSwitch, null),
+                    React.createElement("button", { type: "button", className: "text-sm text-ink rounded-full border border-ink/20 px-4 py-2", "aria-expanded": open, "aria-controls": "mobile-menu", onClick: () => setOpen(!open) }, open ? t.close : t.menuBtn))),
+            open ? (React.createElement("div", { id: "mobile-menu", className: "md:hidden pb-6 flex flex-col gap-5 max-w-7xl mx-auto" },
+                NAV_IDS.map((id, i) => link(t.nav[i], id, "text-lg")),
+                React.createElement("a", { href: "#sorts", onClick: () => setOpen(false), className: "rounded-full bg-blue text-white text-base px-6 py-3 text-center" }, t.cta))) : null)));
+}
+/* Raymarched black tea bowl. The brew colour eases toward the selected tea. */
+function CupViewer({ tea, onTap, aria }) {
+    const ref = React.useRef(null);
+    const want = React.useRef(tea);
+    const tapRef = React.useRef(onTap);
+    React.useEffect(() => { want.current = tea; }, [tea]);
+    React.useEffect(() => { tapRef.current = onTap; }, [onTap]);
+    React.useEffect(() => {
+        const c = ref.current;
+        let gl = null;
+        try {
+            gl = c.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false });
+        }
+        catch (e) { }
+        if (!gl)
+            return;
+        const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return gl.getShaderParameter(o, gl.COMPILE_STATUS) ? o : null; };
+        const vs = sh(gl.VERTEX_SHADER, "attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}");
+        const fs = sh(gl.FRAGMENT_SHADER, TEA_FRAG);
+        if (!vs || !fs)
+            return;
+        const pr = gl.createProgram();
+        gl.attachShader(pr, vs);
+        gl.attachShader(pr, fs);
+        gl.linkProgram(pr);
+        gl.useProgram(pr);
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+        const loc = gl.getAttribLocation(pr, "p");
+        gl.enableVertexAttribArray(loc);
+        gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+        const U = (n) => gl.getUniformLocation(pr, n);
+        const uRes = U("uRes"), uTime = U("uTime"), uRot = U("uRot"), uTea = U("uTea"), uSteam = U("uSteam");
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const HOME = 0.35;
+        const coarse = window.matchMedia("(pointer: coarse)").matches || Math.min(window.innerWidth, window.innerHeight) < 600;
+        const st = { q: 1, ft: 0.016, n: 0, yaw: HOME, pitch: 0.5, vy: 0, col: TEAS[want.current].rgb.slice(), steam: 0, drag: false, moved: 0, lx: 0, ly: 0, idle: 0, prev: performance.now() };
+        let raf = 0, visible = true;
+        const loop = (now) => {
+            const raw = (now - st.prev) / 1000;
+            const dt = Math.min(0.05, raw);
+            st.prev = now;
+            // adaptive resolution: phones with slow GPUs drop the render scale instead of freezing
+            if (raw > 0 && raw < 1) {
+                st.ft = st.ft * 0.92 + raw * 0.08;
+                st.n++;
+            }
+            if (st.n > 24 && st.ft > 0.045 && st.q > 0.4) {
+                st.q *= 0.8;
+                st.n = 0;
+                st.ft = 0.03;
+            }
+            const target = TEAS[want.current].rgb;
+            const k = 1 - Math.exp(-dt * (reduce ? 40 : 3.2));
+            for (let i = 0; i < 3; i++)
+                st.col[i] += (target[i] - st.col[i]) * k;
+            st.steam += (1 - st.steam) * (1 - Math.exp(-dt * 0.8));
+            if (!st.drag) {
+                st.yaw += st.vy;
+                st.vy *= 0.93;
+                st.idle += dt * 1000;
+                if (!reduce && st.idle > 2500)
+                    st.yaw += 0.0025;
+            }
+            const w0 = c.clientWidth, h0 = c.clientHeight;
+            let dpr = Math.min(window.devicePixelRatio || 1, 2);
+            dpr = Math.min(dpr, Math.sqrt((coarse ? 3.2e5 : 1.0e6) / Math.max(1, w0 * h0))) * st.q;
+            const w = Math.max(1, Math.floor(w0 * dpr)), h = Math.max(1, Math.floor(h0 * dpr));
+            if (c.width !== w || c.height !== h) {
+                c.width = w;
+                c.height = h;
+            }
+            gl.viewport(0, 0, w, h);
+            gl.clearColor(0, 0, 0, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.uniform2f(uRes, w, h);
+            gl.uniform1f(uTime, reduce ? 4 : now / 1000);
+            gl.uniform2f(uRot, st.yaw, st.pitch);
+            gl.uniform3f(uTea, st.col[0], st.col[1], st.col[2]);
+            gl.uniform1f(uSteam, reduce ? 0.6 : st.steam);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+            if (visible)
+                raf = requestAnimationFrame(loop);
+        };
+        const down = (e) => { st.drag = true; st.moved = 0; st.lx = e.clientX; st.ly = e.clientY; st.vy = 0; st.idle = 0; c.setPointerCapture && c.setPointerCapture(e.pointerId); };
+        const move = (e) => {
+            if (!st.drag)
+                return;
+            const dx = e.clientX - st.lx, dy = e.clientY - st.ly;
+            st.lx = e.clientX;
+            st.ly = e.clientY;
+            st.moved += Math.abs(dx) + Math.abs(dy);
+            st.yaw += dx * 0.011;
+            st.vy = dx * 0.011;
+            if (e.pointerType === "mouse")
+                st.pitch = Math.max(0.15, Math.min(0.95, st.pitch + dy * 0.007));
+        };
+        const up = () => { const tap = st.drag && st.moved < 6; st.drag = false; st.idle = 0; if (tap && tapRef.current)
+            tapRef.current(); };
+        const cancel = () => { st.drag = false; st.idle = 0; };
+        c.addEventListener("pointerdown", down);
+        c.addEventListener("pointermove", move);
+        c.addEventListener("pointerup", up);
+        c.addEventListener("pointercancel", cancel);
+        let lost = false;
+        c.addEventListener("webglcontextlost", (e) => { e.preventDefault(); lost = true; cancelAnimationFrame(raf); });
+        const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting && !lost; cancelAnimationFrame(raf); if (visible) {
+            st.prev = performance.now();
+            raf = requestAnimationFrame(loop);
+        } });
+        io.observe(c);
+        raf = requestAnimationFrame(loop);
+        return () => { cancelAnimationFrame(raf); io.disconnect(); c.removeEventListener("pointerdown", down); c.removeEventListener("pointermove", move); c.removeEventListener("pointerup", up); c.removeEventListener("pointercancel", cancel); };
+    }, []);
+    return React.createElement("canvas", { ref: ref, role: "img", "aria-label": aria, className: "block w-full h-full cursor-grab active:cursor-grabbing", style: { touchAction: "pan-y" } });
+}
+function TeaDots({ className }) {
+    const { lang } = useLang();
+    const { tea, setTea } = useTea();
+    return (React.createElement("div", { role: "radiogroup", "aria-label": "Tea", className: "flex flex-wrap items-center gap-2.5 " + (className || "") }, TEAS.map((x, i) => (React.createElement("button", { key: x.id, type: "button", role: "radio", "aria-checked": tea === i, "aria-label": x[lang].name, title: x[lang].name, onClick: () => setTea(i), className: "w-7 h-7 rounded-full grid place-items-center border transition-all duration-300 " + (tea === i ? "border-blue scale-110" : "border-ink/15 hover:border-ink/50 hover:scale-110") },
+        React.createElement("span", { className: "block w-4 h-4 rounded-full", style: { background: hex(x.rgb) } }))))));
+}
+function Hero() {
+    const { t, lang } = useLang();
+    const { tea, setTea } = useTea();
+    const H = t.hero;
+    const ref = React.useRef(null);
+    const next = React.useCallback(() => setTea((i) => (i + 1) % TEAS.length), [setTea]);
+    const onMove = (e) => {
+        const el = ref.current;
+        if (!el)
+            return;
+        const r = el.getBoundingClientRect();
+        el.style.setProperty("--gx", ((e.clientX - r.left) / r.width * 100).toFixed(1) + "%");
+        el.style.setProperty("--gy", ((e.clientY - r.top) / r.height * 100).toFixed(1) + "%");
+    };
+    let k = 0;
+    const words = H.h.map((txt, pi) => txt.split(/(\s+)/).map((w, wi) => {
+        if (!w.trim())
+            return w;
+        const d = 0.09 * k++;
+        return React.createElement("span", { key: lang + pi + "-" + wi, className: "word" + (pi === 1 ? " accent" : ""), style: { animationDelay: d + "s" } }, w);
+    }));
+    const cur = TEAS[tea][lang];
+    return (React.createElement("section", { id: "home", ref: ref, onPointerMove: onMove, className: "glow relative min-h-[100svh] w-full overflow-hidden" },
+        React.createElement("div", { className: "relative z-10 gutter" },
+            React.createElement("div", { className: "max-w-7xl mx-auto grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] items-center gap-2 lg:gap-8 min-h-[100svh] pt-24 pb-10 lg:pt-28 lg:pb-14" },
+                React.createElement("div", { className: "min-w-0 text-center lg:text-left" },
+                    React.createElement("div", { className: "rise flex justify-center lg:justify-start" },
+                        React.createElement(Eyebrow, null, H.eyebrow)),
+                    React.createElement("h1", { className: "font-light text-ink text-5xl sm:text-7xl md:text-8xl mt-6", style: { lineHeight: 0.98, letterSpacing: "-0.045em" } }, words),
+                    React.createElement("p", { key: "p" + lang, className: "rise text-base sm:text-lg text-mute max-w-md mt-7 leading-relaxed mx-auto lg:mx-0", style: { animationDelay: "0.45s" } }, H.p),
+                    React.createElement("div", { className: "rise mt-9 flex flex-wrap items-center justify-center lg:justify-start gap-4", style: { animationDelay: "0.6s" } },
+                        React.createElement("a", { href: "#sorts", className: "rounded-full bg-blue text-white text-base px-9 py-3.5 transition hover:brightness-110 hover:shadow-[0_0_30px_rgba(61,123,255,0.6)]" }, t.cta),
+                        React.createElement("a", { href: "#flavours", className: "rounded-full border border-ink/20 text-ink text-base px-7 py-3.5 transition-colors hover:border-blue hover:text-sky" }, t.nav[2]))),
+                React.createElement("div", { className: "min-w-0 rise", style: { animationDelay: "0.25s" } },
+                    React.createElement("div", { className: "relative h-[360px] sm:h-[460px] lg:h-[600px]" },
+                        React.createElement(CupViewer, { tea: tea, onTap: next, aria: H.aria }),
+                        React.createElement("div", { className: "absolute left-1/2 -translate-x-1/2 bottom-2 text-center pointer-events-none" },
+                            React.createElement("p", { key: tea + lang, className: "rise text-2xl font-light text-ink" },
+                                cur.name,
+                                " ",
+                                React.createElement("span", { className: "accent text-2xl" }, cur.sort)))),
+                    React.createElement("div", { className: "mt-3 flex flex-col items-center gap-3" },
+                        React.createElement(TeaDots, null),
+                        React.createElement("span", { className: "text-xs text-mute text-center" }, H.drag)))))));
+}
+function SectionHead({ eyebrow, h, p }) {
+    return (React.createElement(Reveal, { className: "flex flex-wrap items-end justify-between gap-6" },
+        React.createElement("div", null,
+            React.createElement(Eyebrow, null, eyebrow),
+            React.createElement("h2", { className: "font-light text-ink text-5xl sm:text-6xl mt-5", style: { lineHeight: 1, letterSpacing: "-0.04em" } },
+                h[0],
+                React.createElement("span", { className: "accent" }, h[1]))),
+        p ? React.createElement("p", { className: "text-base text-mute max-w-sm leading-relaxed" }, p) : null));
+}
+function Sorts() {
+    const { t, lang } = useLang();
+    const { tea, setTea } = useTea();
+    const S = t.sorts;
+    const cur = TEAS[tea];
+    const C = cur[lang];
+    const next = React.useCallback(() => setTea((i) => (i + 1) % TEAS.length), [setTea]);
+    return (React.createElement("section", { id: "sorts", className: "border-t border-ink/10" },
+        React.createElement("div", { className: "gutter" },
+            React.createElement("div", { className: "max-w-7xl mx-auto py-24 md:py-32" },
+                React.createElement(SectionHead, { eyebrow: S.eyebrow, h: S.h }),
+                React.createElement("div", { className: "mt-12 grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-8 md:gap-12 items-start" },
+                    React.createElement("div", { className: "min-w-0" },
+                        React.createElement("div", { role: "tablist", "aria-label": S.eyebrow, className: "border-t border-ink/10" }, TEAS.map((x, i) => (React.createElement("button", { key: x.id, type: "button", role: "tab", "aria-selected": tea === i, onClick: () => setTea(i), onMouseEnter: () => setTea(i), className: "row-line w-full flex items-center gap-5 py-5 border-b border-ink/10 text-left transition-colors " + (tea === i ? "text-ink" : "text-mute hover:text-ink") },
+                            React.createElement("span", { className: "text-xs tabular-nums w-6 text-blue" }, String(i + 1).padStart(2, "0")),
+                            React.createElement("span", { className: "w-3 h-3 rounded-full shrink-0", style: { background: hex(x.rgb) } }),
+                            React.createElement("span", { className: "text-2xl sm:text-3xl font-light tracking-tight flex-1 min-w-0" }, x[lang].name),
+                            React.createElement("span", { className: "accent text-lg hidden sm:inline" }, x[lang].sort),
+                            React.createElement("span", { className: "transition-transform duration-500 " + (tea === i ? "translate-x-0 text-blue" : "-translate-x-2 opacity-0"), "aria-hidden": "true" }, "\u2192"))))),
+                        React.createElement(Tilt, { max: 3, className: "mt-8 rounded-3xl border border-ink/10 bg-panel p-6 md:p-8 overflow-hidden" },
+                            React.createElement("div", { key: tea + lang, className: "rise" },
+                                React.createElement("p", { className: "text-xs uppercase tracking-[0.2em] text-mute" }, S.sortLbl),
+                                React.createElement("p", { className: "mt-2 text-3xl font-light text-ink tracking-tight" }, C.sort),
+                                React.createElement("p", { className: "mt-3 text-base text-mute leading-relaxed" }, C.notes),
+                                React.createElement("dl", { className: "mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4" },
+                                    [[S.origin, C.origin], [S.temp, C.temp], [S.time, C.time]].map(([k, v], i) => (React.createElement("div", { key: i, className: i === 0 ? "col-span-2 sm:col-span-1" : "" },
+                                        React.createElement("dt", { className: "text-xs text-mute" }, k),
+                                        React.createElement("dd", { className: "mt-1 text-sm text-ink" }, v)))),
+                                    React.createElement("div", { className: "col-span-2 sm:col-span-1" },
+                                        React.createElement("dt", { className: "text-xs text-mute" }, S.caf),
+                                        React.createElement("dd", { className: "mt-2 flex gap-1", "aria-label": cur.caf ? cur.caf + "/5" : S.none }, [0, 1, 2, 3, 4].map((i) => React.createElement("span", { key: i, className: "bar h-1.5 w-5 rounded-full", style: { background: i < cur.caf ? "var(--blue)" : "rgba(238,241,245,0.12)", animationDelay: (i * 0.08) + "s" } })))))))),
+                    React.createElement("div", { className: "sticky top-[72px] md:top-24 min-w-0" },
+                        React.createElement("div", { className: "stage relative rounded-[2rem] border border-ink/10 overflow-hidden h-[340px] sm:h-[440px] md:h-[600px]" },
+                            React.createElement(CupViewer, { tea: tea, onTap: next, aria: t.hero.aria }),
+                            React.createElement("span", { key: tea + lang, className: "rise absolute left-4 top-4 rounded-full bg-bg/70 backdrop-blur px-4 py-2 text-sm text-ink border border-ink/15 pointer-events-none flex items-center gap-2" },
+                                React.createElement("span", { className: "w-2 h-2 rounded-full", style: { background: hex(cur.rgb) } }),
+                                C.name),
+                            React.createElement("div", { className: "absolute left-1/2 -translate-x-1/2 bottom-4" },
+                                React.createElement(TeaDots, null)))))))));
+}
+function Flavours() {
+    const { t, lang } = useLang();
+    const F = t.flav;
+    const [cat, setCat] = React.useState("all");
+    const list = FLAVOURS.filter((f) => cat === "all" || f[0] === cat);
+    return (React.createElement("section", { id: "flavours", className: "border-t border-ink/10" },
+        React.createElement("div", { className: "gutter" },
+            React.createElement("div", { className: "max-w-7xl mx-auto py-24 md:py-32" },
+                React.createElement(SectionHead, { eyebrow: F.eyebrow, h: F.h, p: F.p }),
+                React.createElement(Reveal, { delay: 0.1, className: "mt-10" },
+                    React.createElement("div", { role: "tablist", "aria-label": F.eyebrow, className: "flex flex-wrap gap-2" }, F.cats.map(([k, label]) => {
+                        const n = k === "all" ? FLAVOURS.length : FLAVOURS.filter((f) => f[0] === k).length;
+                        return (React.createElement("button", { key: k, type: "button", role: "tab", "aria-selected": cat === k, onClick: () => setCat(k), className: "rounded-full px-5 py-2.5 text-sm border transition-colors " + (cat === k ? "bg-blue border-blue text-white" : "border-ink/15 text-ink hover:border-blue hover:text-sky") },
+                            label,
+                            " ",
+                            React.createElement("span", { className: "ml-1 tabular-nums " + (cat === k ? "text-white/70" : "text-mute") }, n)));
+                    }))),
+                React.createElement("div", { key: cat + lang, className: "mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" }, list.map((f, i) => (React.createElement("div", { key: f[3], className: "rise min-w-0", style: { animationDelay: (i * 0.05) + "s" } },
+                    React.createElement(Tilt, { className: "card h-full rounded-3xl border border-ink/10 bg-panel p-6 overflow-hidden flex flex-col" },
+                        React.createElement("div", { className: "flex items-start justify-between gap-4" },
+                            React.createElement("div", { className: "orb w-14 h-14 shrink-0", style: { background: "radial-gradient(circle at 60% 65%, " + f[2] + ", #0b1020 120%)", boxShadow: "0 0 34px -6px " + f[2] } }),
+                            React.createElement("span", { className: "text-xs text-mute text-right" },
+                                F.base,
+                                React.createElement("br", null),
+                                React.createElement("span", { className: "text-ink" }, TEAS[f[1]][lang].name))),
+                        React.createElement("h3", { className: "mt-6 text-2xl font-light text-ink tracking-tight" }, lang === "ru" ? f[3] : f[5]),
+                        React.createElement("p", { className: "mt-2 text-sm text-mute leading-relaxed flex-1" }, lang === "ru" ? f[4] : f[6]),
+                        React.createElement("p", { className: "mt-5 pt-4 border-t border-ink/10 flex items-baseline justify-between gap-3" },
+                            React.createElement("span", { className: "text-lg text-ink tabular-nums" }, fmtPrice(f[7])),
+                            React.createElement("span", { className: "text-xs text-mute" }, F.per)))))))))));
+}
+function Timer() {
+    const { t, lang } = useLang();
+    const { tea } = useTea();
+    const B = t.brew;
+    const total = TEAS[tea].secs;
+    const [left, setLeft] = React.useState(total);
+    const [run, setRun] = React.useState(false);
+    React.useEffect(() => { setLeft(total); setRun(false); }, [total]);
+    React.useEffect(() => {
+        if (!run)
+            return;
+        const end = performance.now() + left * 1000;
+        const id = setInterval(() => {
+            const l = Math.max(0, Math.ceil((end - performance.now()) / 1000));
+            setLeft(l);
+            if (l <= 0) {
+                setRun(false);
+                clearInterval(id);
+            }
+        }, 200);
+        return () => clearInterval(id);
+    }, [run]);
+    const R = 92, C = 2 * Math.PI * R;
+    const prog = 1 - left / total;
+    const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, "0");
+    const done = left === 0;
+    return (React.createElement(Tilt, { max: 3, className: "rounded-[2rem] border border-ink/10 bg-panel p-6 md:p-8 overflow-hidden" },
+        React.createElement("div", { className: "flex flex-wrap items-baseline justify-between gap-3" },
+            React.createElement("p", { className: "text-xs uppercase tracking-[0.2em] text-mute" }, B.timer),
+            React.createElement("p", { className: "text-sm text-ink" },
+                B.forTea,
+                ": ",
+                React.createElement("span", { className: "accent text-lg" }, TEAS[tea][lang].name))),
+        React.createElement("div", { className: "mt-6 grid place-items-center" },
+            React.createElement("div", { className: "relative w-[220px] h-[220px]" },
+                React.createElement("svg", { viewBox: "0 0 220 220", className: "w-full h-full -rotate-90", "aria-hidden": "true" },
+                    React.createElement("circle", { cx: "110", cy: "110", r: R, fill: "none", stroke: "rgba(238,241,245,0.08)", strokeWidth: "6" }),
+                    React.createElement("circle", { cx: "110", cy: "110", r: R, fill: "none", stroke: "var(--blue)", strokeWidth: "6", strokeLinecap: "round", strokeDasharray: C, strokeDashoffset: C * (1 - prog), style: { transition: "stroke-dashoffset 0.25s linear", filter: "drop-shadow(0 0 8px rgba(61,123,255,0.7))" }, className: done ? "done-pulse" : "" })),
+                React.createElement("div", { className: "absolute inset-0 grid place-items-center text-center" },
+                    React.createElement("div", null,
+                        React.createElement("p", { className: "text-5xl font-light tabular-nums text-ink", "aria-live": "polite" },
+                            mm,
+                            ":",
+                            ss),
+                        React.createElement("p", { className: "mt-1 text-xs " + (done ? "text-sky" : "text-mute") }, done ? B.done : TEAS[tea][lang].temp))))),
+        React.createElement("div", { className: "mt-6 flex items-center justify-center gap-3" },
+            React.createElement("button", { type: "button", onClick: () => { if (done)
+                    setLeft(total); setRun(!run); }, className: "rounded-full bg-blue text-white text-sm px-7 py-3 transition hover:brightness-110" }, run ? B.pause : B.start),
+            React.createElement("button", { type: "button", onClick: () => { setRun(false); setLeft(total); }, className: "rounded-full border border-ink/20 text-ink text-sm px-6 py-3 transition-colors hover:border-blue hover:text-sky" }, B.reset)),
+        React.createElement(TeaDots, { className: "mt-6 justify-center" })));
+}
+function Brew() {
+    const { t } = useLang();
+    const B = t.brew;
+    return (React.createElement("section", { id: "brew", className: "border-t border-ink/10" },
+        React.createElement("div", { className: "gutter" },
+            React.createElement("div", { className: "max-w-7xl mx-auto py-24 md:py-32" },
+                React.createElement(SectionHead, { eyebrow: B.eyebrow, h: B.h }),
+                React.createElement("div", { className: "mt-12 grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-10 items-center" },
+                    React.createElement("ol", { className: "grid grid-cols-2 gap-4 md:gap-6" }, B.steps.map(([n, l], i) => (React.createElement(Reveal, { as: "li", key: i, delay: i * 0.1, className: "min-w-0" },
+                        React.createElement("div", { className: "step-circle relative mx-auto w-full max-w-[240px] aspect-square rounded-full border border-ink/15 grid place-items-center text-center p-5" },
+                            React.createElement("span", { className: "absolute top-[12%] text-[11px] tabular-nums text-blue" }, String(i + 1).padStart(2, "0")),
+                            React.createElement("div", null,
+                                React.createElement("p", { className: "text-3xl sm:text-4xl md:text-5xl font-light tracking-tight text-ink tabular-nums whitespace-nowrap" }, n),
+                                React.createElement("p", { className: "step-label mt-2 text-xs md:text-sm text-mute max-w-[15ch] mx-auto leading-snug transition-colors" }, l))))))),
+                    React.createElement(Reveal, { delay: 0.15, className: "min-w-0" },
+                        React.createElement(Timer, null)))))));
+}
+function Footer() {
+    const { t } = useLang();
+    return (React.createElement("footer", { className: "border-t border-ink/10" },
+        React.createElement("div", { className: "gutter" },
+            React.createElement("div", { className: "max-w-7xl mx-auto py-10 flex flex-wrap items-center justify-between gap-x-10 gap-y-5" },
+                React.createElement(Logo, null),
+                React.createElement("nav", { className: "flex flex-wrap gap-x-7 gap-y-2", "aria-label": t.navLabel }, NAV_IDS.map((id, i) => React.createElement("a", { key: id, href: "#" + id, className: "text-sm text-mute hover:text-ink transition-colors" }, t.nav[i]))),
+                React.createElement("div", { className: "w-full pt-5 border-t border-ink/10 flex flex-wrap justify-between gap-x-8 gap-y-3 text-sm text-mute" },
+                    React.createElement("span", null, t.footer.note),
+                    React.createElement("a", { href: "#home", className: "hover:text-ink transition-colors" }, t.footer.top))))));
+}
+function initialLang() {
+    try {
+        const v = localStorage.getItem("aoi-lang");
+        if (v === "en" || v === "ru")
+            return v;
+    }
+    catch (e) { }
+    return (navigator.language || "en").toLowerCase().indexOf("ru") === 0 ? "ru" : "en";
+}
+function App() {
+    const [lang, setLangState] = React.useState(initialLang);
+    const setLang = (l) => { setLangState(l); try {
+        localStorage.setItem("aoi-lang", l);
+    }
+    catch (e) { } };
+    const [tea, setTea] = React.useState(0);
+    React.useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+    const ctx = React.useMemo(() => ({ lang, t: T[lang], setLang }), [lang]);
+    const teaCtx = React.useMemo(() => ({ tea, setTea }), [tea]);
+    const active = useActiveSection();
+    return (React.createElement(LangCtx.Provider, { value: ctx },
+        React.createElement(TeaCtx.Provider, { value: teaCtx },
+            React.createElement(Header, { active: active }),
+            React.createElement("main", null,
+                React.createElement(Hero, null),
+                React.createElement(Sorts, null),
+                React.createElement(Flavours, null),
+                React.createElement(Brew, null)),
+            React.createElement(Footer, null))));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App, null));
+
+})();
+</script>
+</body>
+</html>
